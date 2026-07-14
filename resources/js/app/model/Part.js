@@ -5,17 +5,8 @@
  */
 class Part {
     /**
-     * @param {string} name
-     * @param {number} w
-     * @param {number} h
-     * @param {boolean} canRotate
-     * @param {number} qty - Брой идентични части (default 1).
-     * @param {number[]} edges - Масив от 4 числа за кантове [top, right, bottom, left] (default [0,0,0,0]).
-     */
-    /**
-     * Конвертира legacy число (0-4) към масив [T,R,B,L].
-     * 1=top, 2=right, 3=bottom, 4=left — запазва само първите толкова страни.
-     * Използва се при импорт на стари проекти.
+     * Конвертира legacy число (0-4) към масив [L1, L2, S1, S2].
+     * 1=L1, 2=L1+L2, 3=L1+L2+S1, 4=all.
      */
     static convertLegacyEdges(val) {
         if (Array.isArray(val) && val.length === 4) return val.slice();
@@ -33,7 +24,7 @@ class Part {
         this.h = h || 0;
         this.canRotate = canRotate || false;
         this.qty = (qty !== undefined) ? qty : 1;
-        // Поддържаме legacy число (0-4) и масив [T,R,B,L]
+        // Поддържаме legacy число (0-4) и масив [L1, L2, S1, S2]
         if (edges && Array.isArray(edges) && edges.length === 4) {
             this.edges = edges.slice();
         } else if (typeof edges === 'number') {
@@ -47,14 +38,12 @@ class Part {
         return this.w * this.h;
     }
 
-    /**
-     * Връща общия брой кантове (сума от 4-те страни).
-     */
     getTotalEdges() {
         return this.edges[0] + this.edges[1] + this.edges[2] + this.edges[3];
     }
 
     copy() {
-        return new Part(this.name, this.w, this.h, this.canRotate, this.qty, this.edges);
+        // ВАЖНО: .slice() за да не се споделя референция на масива
+        return new Part(this.name, this.w, this.h, this.canRotate, this.qty, this.edges.slice());
     }
 }

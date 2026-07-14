@@ -246,6 +246,7 @@ class ProjectManager {
 
         // Разгръщаме според qty — динамично, без да променяме оригиналния списък
         var expandedParts = this.expandParts();
+        this.lastExpandedPartsCount = expandedParts.length;
 
         console.log('ProjectManager.runOptimization: compactParts=' + this.parts.length +
             ', expandedParts=' + expandedParts.length +
