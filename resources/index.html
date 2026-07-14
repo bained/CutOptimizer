@@ -20,11 +20,70 @@
             </div>
 
             <div id="results-panel" class="hidden">
+                <!-- Toolbar -->
                 <div class="toolbar">
-                    <button id="btn-run" class="btn-primary" disabled>▶ Стартирай оптимизация</button>
+                    <button id="btn-run" class="btn-primary" disabled>▶ Стартирай</button>
                     <span id="status-text">Готов</span>
+                    <button id="btn-settings-toggle" class="btn-icon" title="Настройки">⚙</button>
                 </div>
 
+                <!-- Settings Panel (collapsible) -->
+                <div id="settings-panel" class="settings-panel hidden">
+                    <div class="settings-row">
+                        <div class="settings-group">
+                            <label for="input-iterations">Итерации</label>
+                            <input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000">
+                        </div>
+                        <div class="settings-group">
+                            <label for="input-beam-width">Beam Width</label>
+                            <input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100">
+                        </div>
+                        <div class="settings-group">
+                            <label for="input-seed">Seed</label>
+                            <input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="settings-group">
+                            <label>Quality Profile</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="quality" value="fast"> Fast
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="quality" value="balanced" checked> Balanced
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="quality" value="precise"> Precise
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="input-randomize"> Randomize
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="settings-group">
+                            <label>Проект</label>
+                            <div class="btn-row">
+                                <button id="btn-load-parts" class="btn-secondary">📂 Load Parts</button>
+                                <button id="btn-load-sheet" class="btn-secondary">📂 Load Sheet</button>
+                                <button id="btn-help" class="btn-secondary btn-help" title="Help">?</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="help-text" class="help-text hidden">
+                        <p><strong>Iterations:</strong> Брой итерации на алгоритъма. Повече = по-добър резултат, но по-бавно.</p>
+                        <p><strong>Beam Width:</strong> Брой кандидати, които се запазват на всяка стъпка. По-висок = по-прецизно, но по-бавно.</p>
+                        <p><strong>Seed:</strong> Начална стойност за рандомизатора. Еднакъв seed = еднакви резултати.</p>
+                        <p><strong>Quality Profile:</strong> Fast = 10 итерации, Balanced = 50, Precise = 200.</p>
+                        <p><strong>Randomize:</strong> Ако е включен, всяко пускане дава различен резултат.</p>
+                    </div>
+                </div>
+
+                <!-- Split View -->
                 <div class="split-view">
                     <div class="panel panel-left">
                         <h2>Параметри</h2>
@@ -68,6 +127,14 @@
                             <div id="svg-container"></div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progress-container" class="progress-container hidden">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <span id="progress-text" class="progress-text">0%</span>
                 </div>
             </div>
         </main>

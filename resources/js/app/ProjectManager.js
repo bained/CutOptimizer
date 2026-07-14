@@ -2,7 +2,6 @@
 
 /**
  * ProjectManager — управлява жизнения цикъл на един проект.
- * Използва глобалните класове: Part, Optimizer, ConfigManager.
  */
 class ProjectManager {
     /**
@@ -28,7 +27,6 @@ class ProjectManager {
 
     async loadProject(filePath) {
         try {
-            // Използваме NL_PATH — глобална променлива на Neutralino
             var basePath = (typeof NL_PATH !== 'undefined') ? NL_PATH : '';
             var fullPath = basePath + '/' + filePath;
             console.log('ProjectManager: Loading project from:', fullPath);
@@ -71,7 +69,7 @@ class ProjectManager {
         }
     }
 
-    async runOptimization() {
+    async runOptimization(iterations, beamWidth, randomize, onProgress) {
         if (!this.optimizer) {
             throw new Error('ProjectManager: No project loaded.');
         }
@@ -80,11 +78,7 @@ class ProjectManager {
             throw new Error('ProjectManager: No parts to optimize.');
         }
 
-        const settings = this.config.get();
-        const iterations = settings.iterations;
-        const beamWidth = settings.beamWidth;
-
-        const layout = this.optimizer.optimize(this.parts, iterations, beamWidth);
+        var layout = this.optimizer.optimize(this.parts, iterations, beamWidth, randomize, onProgress);
         this.result = layout;
 
         return this.getResultSummary();
@@ -95,12 +89,12 @@ class ProjectManager {
             return null;
         }
 
-        const totalParts = this.countTotalPlacedParts();
-        let totalEff = 0;
-        for (let i = 0; i < this.result.sheets.length; i++) {
+        var totalParts = this.countTotalPlacedParts();
+        var totalEff = 0;
+        for (var i = 0; i < this.result.sheets.length; i++) {
             totalEff += this.result.sheets[i].efficiency;
         }
-        const avgEfficiency = this.result.sheets.length > 0
+        var avgEfficiency = this.result.sheets.length > 0
             ? (totalEff / this.result.sheets.length)
             : 0;
 
@@ -113,8 +107,8 @@ class ProjectManager {
     }
 
     countTotalPlacedParts() {
-        let count = 0;
-        for (let i = 0; i < this.result.sheets.length; i++) {
+        var count = 0;
+        for (var i = 0; i < this.result.sheets.length; i++) {
             count += this.result.sheets[i].parts.length;
         }
         return count;
@@ -125,7 +119,7 @@ class ProjectManager {
             throw new Error('ProjectManager: No result to save.');
         }
 
-        const output = {
+        var output = {
             input: {
                 sheetW: this.sheetW,
                 sheetH: this.sheetH,
@@ -136,15 +130,15 @@ class ProjectManager {
             sheets: []
         };
 
-        for (let si = 0; si < this.result.sheets.length; si++) {
-            const s = this.result.sheets[si];
-            const sheetData = {
+        for (var si = 0; si < this.result.sheets.length; si++) {
+            var s = this.result.sheets[si];
+            var sheetData = {
                 efficiency: s.efficiency,
                 parts: []
             };
 
-            for (let pi = 0; pi < s.parts.length; pi++) {
-                const p = s.parts[pi];
+            for (var pi = 0; pi < s.parts.length; pi++) {
+                var p = s.parts[pi];
                 sheetData.parts.push({
                     name: p.name,
                     x: p.x,

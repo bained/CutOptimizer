@@ -13,24 +13,26 @@ class ConfigManager {
             iterations: 50,
             kerf: 4,
             beamWidth: 12,
+            seed: 42,
+            randomize: false,
             currentJson: 'kitchen_project.json'
         };
     }
 
     parseIni(text) {
-        const result = {};
-        const lines = text.split('\n');
+        var result = {};
+        var lines = text.split('\n');
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
             if (line === '' || line.startsWith(';') || line.startsWith('#')) {
                 continue;
             }
 
-            const eqIndex = line.indexOf('=');
+            var eqIndex = line.indexOf('=');
             if (eqIndex > 0) {
-                const key = line.substring(0, eqIndex).trim();
-                const value = line.substring(eqIndex + 1).trim();
+                var key = line.substring(0, eqIndex).trim();
+                var value = line.substring(eqIndex + 1).trim();
                 if (key !== '' && value !== '') {
                     result[key] = value;
                 }
@@ -42,7 +44,6 @@ class ConfigManager {
 
     async load() {
         try {
-            // Използваме NL_PATH — глобална променлива на Neutralino
             var basePath = (typeof NL_PATH !== 'undefined') ? NL_PATH : '';
             var fullPath = basePath + '/' + this.configPath;
             console.log('ConfigManager: Loading config from:', fullPath);
@@ -58,6 +59,12 @@ class ConfigManager {
             if (parsed['beamWidth'] !== undefined) {
                 this.settings.beamWidth = parseInt(parsed['beamWidth'], 10);
             }
+            if (parsed['seed'] !== undefined) {
+                this.settings.seed = parseInt(parsed['seed'], 10);
+            }
+            if (parsed['randomize'] !== undefined) {
+                this.settings.randomize = parsed['randomize'] === 'true';
+            }
             if (parsed['current_json'] !== undefined) {
                 this.settings.currentJson = parsed['current_json'];
             }
@@ -70,10 +77,12 @@ class ConfigManager {
     }
 
     async save() {
-        const lines = [];
+        var lines = [];
         lines.push('iterations=' + this.settings.iterations);
         lines.push('kerf=' + this.settings.kerf);
         lines.push('beamWidth=' + this.settings.beamWidth);
+        lines.push('seed=' + this.settings.seed);
+        lines.push('randomize=' + (this.settings.randomize ? 'true' : 'false'));
         lines.push('current_json=' + this.settings.currentJson);
 
         try {
@@ -88,6 +97,8 @@ class ConfigManager {
             iterations: this.settings.iterations,
             kerf: this.settings.kerf,
             beamWidth: this.settings.beamWidth,
+            seed: this.settings.seed,
+            randomize: this.settings.randomize,
             currentJson: this.settings.currentJson
         };
     }
