@@ -76,14 +76,14 @@ class ProjectManager {
     /**
      * Добавя нова част.
      */
-    addPart(name, w, h, canRotate) {
+    addPart(name, w, h, canRotate, qty, edges) {
         if (!name || name.trim() === '') {
             throw new Error('Part name cannot be empty.');
         }
         if (w <= 0 || h <= 0) {
             throw new Error('Part dimensions must be positive numbers.');
         }
-        this.parts.push(new Part(name.trim(), w, h, !!canRotate));
+        this.parts.push(new Part(name.trim(), w, h, !!canRotate, qty, edges));
         this.result = null;
     }
 
@@ -101,7 +101,7 @@ class ProjectManager {
     /**
      * Редактира част по индекс.
      */
-    updatePart(index, name, w, h, canRotate) {
+    updatePart(index, name, w, h, canRotate, qty, edges) {
         if (index < 0 || index >= this.parts.length) {
             throw new Error('Invalid part index.');
         }
@@ -111,7 +111,7 @@ class ProjectManager {
         if (w <= 0 || h <= 0) {
             throw new Error('Part dimensions must be positive numbers.');
         }
-        this.parts[index] = new Part(name.trim(), w, h, !!canRotate);
+        this.parts[index] = new Part(name.trim(), w, h, !!canRotate, qty, edges);
         this.result = null;
     }
 
@@ -126,7 +126,9 @@ class ProjectManager {
                 n: p.name,
                 w: p.w,
                 h: p.h,
-                r: p.canRotate ? 1 : 0
+                r: p.canRotate ? 1 : 0,
+                q: p.qty,
+                e: p.edges
             });
         }
         return result;
@@ -141,6 +143,7 @@ class ProjectManager {
 
     /**
      * Зарежда части от JSON string.
+     * Поддържа legacy формат без qty/edges — задава defaults.
      */
     importPartsFromJSON(jsonString) {
         var data = JSON.parse(jsonString);
@@ -150,11 +153,17 @@ class ProjectManager {
         this.parts = [];
         for (var i = 0; i < data.parts.length; i++) {
             var p = data.parts[i];
+            var qty = (p.q !== undefined) ? this.parseNumericValue(p.q) : 1;
+            var edges = (p.e && Array.isArray(p.e) && p.e.length === 4)
+                ? p.e.map(function(v) { return parseInt(v, 10) || 0; })
+                : [0, 0, 0, 0];
             this.addPart(
                 p.n,
                 this.parseNumericValue(p.w),
                 this.parseNumericValue(p.h),
-                this.parseNumericValue(p.r) === 1
+                this.parseNumericValue(p.r) === 1,
+                qty,
+                edges
             );
         }
     }
@@ -177,11 +186,17 @@ class ProjectManager {
             this.parts = [];
             for (var i = 0; i < data.parts.length; i++) {
                 var p = data.parts[i];
+                var qty = (p.q !== undefined) ? this.parseNumericValue(p.q) : 1;
+                var edges = (p.e && Array.isArray(p.e) && p.e.length === 4)
+                    ? p.e.map(function(v) { return parseInt(v, 10) || 0; })
+                    : [0, 0, 0, 0];
                 this.parts.push(new Part(
                     p.n,
                     this.parseNumericValue(p.w),
                     this.parseNumericValue(p.h),
-                    this.parseNumericValue(p.r) === 1
+                    this.parseNumericValue(p.r) === 1,
+                    qty,
+                    edges
                 ));
             }
 

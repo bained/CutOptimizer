@@ -113,6 +113,8 @@
                             <input type="text" id="input-part-name" class="text-input" placeholder="Name">
                             <input type="number" id="input-part-w" class="settings-input" placeholder="W" min="1" max="5000">
                             <input type="number" id="input-part-h" class="settings-input" placeholder="H" min="1" max="5000">
+                            <input type="number" id="input-part-qty" class="settings-input" value="1" min="1" max="999">
+                            <input type="number" id="input-part-edges" class="settings-input" placeholder="Edges" value="0" min="0" max="4">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="input-part-rotate"> Rot
                             </label>
@@ -128,6 +130,8 @@
                                         <th>Name</th>
                                         <th>W (mm)</th>
                                         <th>H (mm)</th>
+                                        <th>Qty</th>
+                                        <th>Edges</th>
                                         <th>Rot</th>
                                         <th></th>
                                     </tr>
@@ -175,7 +179,13 @@
                         </div>
                     </div>
                     <div class="panel panel-right">
-                        <h2>Визуализация</h2>
+                        <div class="panel-header-row">
+                            <h2>Визуализация</h2>
+                            <div class="btn-row">
+                                <button id="btn-export-csv" class="btn-secondary" title="Export to CSV">📊 CSV</button>
+                                <button id="btn-export-png" class="btn-secondary" title="Export as PNG">🖼 PNG</button>
+                            </div>
+                        </div>
                         <div id="visualization-container">
                             <div id="svg-container"></div>
                         </div>

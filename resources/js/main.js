@@ -33,7 +33,6 @@ async function initApp() {
         projectManager = new ProjectManager(basePath + '/config.ini');
         var meta = await projectManager.loadProject(basePath + '/kitchen_project.json');
 
-        // Попълваме UI от store-а
         refreshAllUI(meta);
 
         document.getElementById('btn-run').disabled = false;
@@ -68,7 +67,6 @@ function refreshAllUI(meta) {
         document.getElementById('display-parts-count').textContent =
             meta.partCount + ' части';
 
-        // Data tab sheet fields
         document.getElementById('input-sheet-w').value = meta.sheetW;
         document.getElementById('input-sheet-h').value = meta.sheetH;
         document.getElementById('input-sheet-kerf').value = meta.kerf;
@@ -97,25 +95,39 @@ function refreshPartsTable() {
             '<td><input type="text" class="edit-name" value="' + escapeHtml(p.name) + '"></td>' +
             '<td><input type="number" class="edit-w" value="' + p.w + '" min="1"></td>' +
             '<td><input type="number" class="edit-h" value="' + p.h + '" min="1"></td>' +
+            '<td><input type="number" class="edit-qty" value="' + p.qty + '" min="1" max="999"></td>' +
+            '<td><input type="number" class="edit-edges" value="' + p.getTotalEdges() + '" min="0" max="4"></td>' +
             '<td><input type="checkbox" class="edit-rot" ' + (p.canRotate ? 'checked' : '') + '></td>' +
             '<td><button class="btn-icon-small" data-index="' + i + '" title="Delete">✕</button></td>';
 
         tbody.appendChild(tr);
 
-        // Save on change events
         var nameInput = tr.querySelector('.edit-name');
         var wInput = tr.querySelector('.edit-w');
         var hInput = tr.querySelector('.edit-h');
+        var qtyInput = tr.querySelector('.edit-qty');
+        var edgesInput = tr.querySelector('.edit-edges');
         var rotInput = tr.querySelector('.edit-rot');
         var delBtn = tr.querySelector('.btn-icon-small');
 
-        function makeSaveHandler(idx, nameEl, wEl, hEl, rotEl) {
+        function makeSaveHandler(idx, nameEl, wEl, hEl, qtyEl, edgesEl, rotEl) {
             return function() {
                 try {
+                    var edgesVal = parseInt(edgesEl.value, 10) || 0;
+                    // Edges: записваме общия брой разпределен по подразбиране само отпред/отзад
+                    var edgesArr = [0, 0, 0, 0];
+                    if (edgesVal > 0) {
+                        edgesArr[0] = Math.min(edgesVal, 1);
+                        edgesArr[1] = Math.min(edgesVal, 1);
+                        edgesArr[2] = Math.min(edgesVal, 1);
+                        edgesArr[3] = Math.min(edgesVal, 1);
+                    }
                     projectManager.updatePart(idx, nameEl.value,
                         parseInt(wEl.value, 10) || 0,
                         parseInt(hEl.value, 10) || 0,
-                        rotEl.checked);
+                        rotEl.checked,
+                        parseInt(qtyEl.value, 10) || 1,
+                        edgesArr);
                     refreshPartsTable();
                 } catch (err) {
                     document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
@@ -123,10 +135,12 @@ function refreshPartsTable() {
             };
         }
 
-        nameInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
-        wInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
-        hInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
-        rotInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
+        nameInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, qtyInput, edgesInput, rotInput));
+        wInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, qtyInput, edgesInput, rotInput));
+        hInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, qtyInput, edgesInput, rotInput));
+        qtyInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, qtyInput, edgesInput, rotInput));
+        edgesInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, qtyInput, edgesInput, rotInput));
+        rotInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, qtyInput, edgesInput, rotInput));
 
         delBtn.addEventListener('click', function() {
             var idx = parseInt(this.getAttribute('data-index'), 10);
@@ -226,14 +240,26 @@ function onPartAdd() {
         var name = document.getElementById('input-part-name').value;
         var w = parseInt(document.getElementById('input-part-w').value, 10) || 0;
         var h = parseInt(document.getElementById('input-part-h').value, 10) || 0;
+        var qty = parseInt(document.getElementById('input-part-qty').value, 10) || 1;
+        var edgesVal = parseInt(document.getElementById('input-part-edges').value, 10) || 0;
         var rot = document.getElementById('input-part-rotate').checked;
 
-        projectManager.addPart(name, w, h, rot);
+        // Edges: разпределяме по подразбиране
+        var edgesArr = [0, 0, 0, 0];
+        if (edgesVal > 0) {
+            edgesArr[0] = Math.min(edgesVal, 1);
+            edgesArr[1] = Math.min(edgesVal, 1);
+            edgesArr[2] = Math.min(edgesVal, 1);
+            edgesArr[3] = Math.min(edgesVal, 1);
+        }
 
-        // Изчистваме формата
+        projectManager.addPart(name, w, h, rot, qty, edgesArr);
+
         document.getElementById('input-part-name').value = '';
         document.getElementById('input-part-w').value = '';
         document.getElementById('input-part-h').value = '';
+        document.getElementById('input-part-qty').value = '1';
+        document.getElementById('input-part-edges').value = '0';
         document.getElementById('input-part-rotate').checked = false;
 
         refreshPartsTable();
@@ -353,7 +379,6 @@ async function runOptimization() {
 
         statusText.textContent = 'Готово за ' + elapsed + 's';
 
-        // Превключваме към Results tab
         switchTab('results');
 
         var layout = projectManager.getLayout();
@@ -429,14 +454,119 @@ function renderSVG(layout) {
     container.innerHTML = svg;
 }
 
+// ===================== EXPORT =====================
+
+/**
+ * Добавя file extension ако липсва.
+ */
+function ensureExtension(filePath, ext) {
+    if (!filePath.toLowerCase().endsWith(ext.toLowerCase())) {
+        return filePath + ext;
+    }
+    return filePath;
+}
+
+async function exportCSV() {
+    try {
+        if (!projectManager || projectManager.parts.length === 0) {
+            document.getElementById('status-text').textContent = 'Няма данни за експорт';
+            return;
+        }
+
+        var rows = [];
+        rows.push('Name,Width,Height,Qty,Edges,Rotated');
+
+        for (var i = 0; i < projectManager.parts.length; i++) {
+            var p = projectManager.parts[i];
+            var name = '"' + p.name.replace(/"/g, '""') + '"';
+            rows.push(name + ',' + p.w + ',' + p.h + ',' + p.qty + ',' + p.getTotalEdges() + ',' + (p.canRotate ? '1' : '0'));
+        }
+
+        var csvContent = rows.join('\r\n');
+
+        var result = await Neutralino.os.showSaveDialog('Export Parts CSV', {
+            filters: [{ name: 'CSV files', extensions: ['csv'] }]
+        });
+        if (!result) return;
+
+        // Добавяме .csv ако липсва
+        result = ensureExtension(result, '.csv');
+
+        await Neutralino.filesystem.writeFile(result, csvContent);
+        document.getElementById('status-text').textContent = 'CSV exported: ' + projectManager.parts.length + ' parts';
+    } catch (err) {
+        console.error('CSV export error:', err);
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
+async function exportPNG() {
+    try {
+        var svgContainer = document.getElementById('svg-container');
+        var svgEl = svgContainer.querySelector('svg');
+        if (!svgEl) {
+            document.getElementById('status-text').textContent = 'Няма визуализация за експорт';
+            return;
+        }
+
+        var svgData = new XMLSerializer().serializeToString(svgEl);
+        var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        var url = URL.createObjectURL(svgBlob);
+
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+
+        var rect = svgEl.getBoundingClientRect();
+        var scale = 2;
+        canvas.width = rect.width * scale;
+        canvas.height = rect.height * scale;
+
+        var img = new Image();
+        img.onload = async function() {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+
+            canvas.toBlob(async function(blob) {
+                if (!blob) {
+                    document.getElementById('status-text').textContent = 'Грешка: Cannot create PNG';
+                    return;
+                }
+
+                var reader = new FileReader();
+                reader.onload = async function() {
+                    var base64Data = reader.result.split(',')[1];
+                    var bytes = new Uint8Array(atob(base64Data).split('').map(function(c) { return c.charCodeAt(0); }));
+
+                    var result = await Neutralino.os.showSaveDialog('Export PNG', {
+                        filters: [{ name: 'PNG files', extensions: ['png'] }]
+                    });
+                    if (!result) return;
+
+                    // Добавяме .png ако липсва
+                    result = ensureExtension(result, '.png');
+
+                    await Neutralino.filesystem.writeBinaryFile(result, bytes.buffer);
+                    document.getElementById('status-text').textContent = 'PNG exported';
+                };
+                reader.readAsDataURL(blob);
+            }, 'image/png');
+        };
+
+        img.src = url;
+    } catch (err) {
+        console.error('PNG export error:', err);
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
 // ===================== DOM СЪБИТИЯ =====================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Run button
     var btn = document.getElementById('btn-run');
     if (btn) btn.addEventListener('click', runOptimization);
 
-    // Tab buttons
     var tabBtns = document.querySelectorAll('.tab-btn');
     for (var i = 0; i < tabBtns.length; i++) {
         tabBtns[i].addEventListener('click', function() {
@@ -444,13 +574,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Quality profile
     var qualityRadios = document.querySelectorAll('input[name="quality"]');
     for (var j = 0; j < qualityRadios.length; j++) {
         qualityRadios[j].addEventListener('change', onQualityChange);
     }
 
-    // Data tab: Sheet
     var sheetApply = document.getElementById('btn-sheet-apply');
     if (sheetApply) sheetApply.addEventListener('click', onSheetApply);
 
@@ -460,7 +588,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var sheetExport = document.getElementById('btn-sheet-export');
     if (sheetExport) sheetExport.addEventListener('click', onSheetExport);
 
-    // Data tab: Parts
     var partAdd = document.getElementById('btn-part-add');
     if (partAdd) partAdd.addEventListener('click', onPartAdd);
 
@@ -469,6 +596,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var partsExport = document.getElementById('btn-parts-export');
     if (partsExport) partsExport.addEventListener('click', onPartsExport);
+
+    var exportCSVBtn = document.getElementById('btn-export-csv');
+    if (exportCSVBtn) exportCSVBtn.addEventListener('click', exportCSV);
+
+    var exportPNGBtn = document.getElementById('btn-export-png');
+    if (exportPNGBtn) exportPNGBtn.addEventListener('click', exportPNG);
 });
 
 window.addEventListener('error', function(e) {
@@ -478,8 +611,6 @@ window.addEventListener('error', function(e) {
         statusText.textContent = 'JS Грешка: ' + e.message;
     }
 });
-
-// ===================== NEUTRALINO СТАРТ =====================
 
 Neutralino.events.on('ready', onReady);
 

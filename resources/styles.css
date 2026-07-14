@@ -265,6 +265,17 @@ header h1 {
     line-height: 1.3;
 }
 
+.panel-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.panel-header-row h2 {
+    margin-bottom: 0;
+}
+
 /* ----- 6. Parameter display ----- */
 .param-group {
     display: flex;
