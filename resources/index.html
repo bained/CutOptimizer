@@ -1,215 +1,138 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CutOptimizer</title>
-    <link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CutOptimizer</title>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>CutOptimizer</h1>
-            <span class="subtitle">Оптимизация на разкроя на плоскости</span>
-        </header>
+<div id="app">
+<header><h1>CutOptimizer</h1><span class="subtitle">Оптимизация на разкроя на плоскости</span></header>
+<main id="main-content">
+<div id="loading"><p>Зареждане...</p><div class="spinner"></div></div>
+<div id="results-panel" class="hidden">
+<div class="toolbar">
+<button id="btn-run" class="btn-primary" disabled>▶ Стартирай</button>
+<span id="status-text">Готов</span>
+<span id="current-project" class="project-name">Проект: —</span>
+<select id="example-select" class="example-select"><option value="">Избери пример...</option></select>
+</div>
+<div class="tab-bar">
+<button class="tab-btn active" data-tab="settings">⚙ Settings</button>
+<button class="tab-btn" data-tab="data">📋 Data</button>
+<button class="tab-btn" data-tab="results">📊 Results</button>
+</div>
 
-        <main id="main-content">
-            <div id="loading">
-                <p>Зареждане на проекта...</p>
-                <div class="spinner"></div>
-            </div>
+<!-- TAB: SETTINGS -->
+<div id="tab-settings" class="tab-content active">
+<div class="settings-panel">
+<div class="settings-row">
+<div class="settings-group"><label for="input-iterations">Iterations</label><input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000"></div>
+<div class="settings-group"><label for="input-beam-width">Beam Width</label><input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100"></div>
+<div class="settings-group"><label for="input-seed">Seed</label><input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646"></div>
+</div>
+<div class="settings-row">
+<div class="settings-group"><label>Quality Profile</label>
+<div class="radio-group">
+<label class="radio-label"><input type="radio" name="quality" value="fast"> Fast</label>
+<label class="radio-label"><input type="radio" name="quality" value="balanced" checked> Balanced</label>
+<label class="radio-label"><input type="radio" name="quality" value="precise"> Precise</label>
+</div></div>
+<div class="settings-group"><label class="checkbox-label"><input type="checkbox" id="input-randomize"> Randomize</label></div>
+</div>
+</div>
+</div>
 
-            <div id="results-panel" class="hidden">
-                <!-- Toolbar -->
-                <div class="toolbar">
-                    <button id="btn-run" class="btn-primary" disabled>▶ Стартирай</button>
-                    <span id="status-text">Готов</span>
-                </div>
+<!-- TAB: DATA -->
+<div id="tab-data" class="tab-content">
+<div class="data-section">
+<div class="data-section-header"><h3>Project</h3>
+<div class="btn-row">
+<button id="btn-save-project" class="btn-secondary">💾 Save</button>
+<button id="btn-load-project" class="btn-secondary">📂 Load</button>
+<button id="btn-new-project" class="btn-secondary">✕ New</button>
+</div></div>
+</div>
+<div class="data-section">
+<div class="data-section-header"><h3>Sheet</h3>
+<div class="btn-row"><button id="btn-sheet-import" class="btn-secondary">📂 Import</button><button id="btn-sheet-export" class="btn-secondary">💾 Export</button></div></div>
+<div class="sheet-form">
+<div class="settings-group"><label for="input-sheet-w">Width (mm)</label><input type="number" id="input-sheet-w" class="settings-input" value="2440" min="1" max="5000"></div>
+<div class="settings-group"><label for="input-sheet-h">Height (mm)</label><input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000"></div>
+<div class="settings-group"><label for="input-sheet-kerf">Kerf (mm)</label><input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50"></div>
+<div class="settings-group" style="align-self:flex-end;"><button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;">Apply</button></div>
+</div></div>
+<div class="data-section">
+<div class="data-section-header"><h3>Parts (<span id="parts-count-label">0</span>)</h3>
+<div class="btn-row"><button id="btn-parts-import" class="btn-secondary">📂 Import</button><button id="btn-parts-export" class="btn-secondary">💾 Export</button></div></div>
+<div class="part-add-form">
+<input type="text" id="input-part-name" class="text-input" placeholder="Name">
+<input type="number" id="input-part-w" class="settings-input" placeholder="W" min="1" max="5000">
+<input type="number" id="input-part-h" class="settings-input" placeholder="H" min="1" max="5000">
+<input type="number" id="input-part-qty" class="settings-input" value="1" min="1" max="999">
+<label class="checkbox-label"><input type="checkbox" id="input-part-rotate"> Rot</label>
+<span class="edges-label">Edges:</span>
+<div class="edges-group" id="add-edges-group">
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="0"> T</label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="1"> R</label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="2"> B</label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="3"> L</label>
+</div>
+<button id="btn-part-add" class="btn-primary" style="padding:6px 16px;font-size:14px;">+ Add</button>
+</div>
+<div id="parts-table-container">
+<table id="parts-table" class="data-table">
+<thead><tr><th>#</th><th>Name</th><th>W (mm)</th><th>H (mm)</th><th>Qty</th><th>Edges</th><th>Rot</th><th></th></tr></thead>
+<tbody id="parts-table-body"></tbody>
+</table></div></div>
+</div>
 
-                <!-- Tabs -->
-                <div class="tab-bar">
-                    <button class="tab-btn active" data-tab="settings">⚙ Settings</button>
-                    <button class="tab-btn" data-tab="data">📋 Data</button>
-                    <button class="tab-btn" data-tab="results">📊 Results</button>
-                </div>
+<!-- TAB: RESULTS -->
+<div id="tab-results" class="tab-content">
+<div class="results-layout">
+<div class="panel panel-left">
+<h2>Параметри</h2>
+<div class="param-group"><label>Лист (Ш x В):</label><span id="display-sheet-size" class="param-value">-</span></div>
+<div class="param-group"><label>Kerf:</label><span id="display-kerf" class="param-value">-</span></div>
+<div class="param-group"><label>Части:</label><span id="display-parts-count" class="param-value">-</span></div>
+<hr>
+<h2>Резултат</h2>
+<div class="param-group"><label>Листове:</label><span id="result-sheets" class="param-value highlight">-</span></div>
+<div class="param-group"><label>Ср. ефективност:</label><span id="result-efficiency" class="param-value highlight">-</span></div>
+<div class="param-group"><label>Score:</label><span id="result-score" class="param-value">-</span></div>
+<div class="param-group"><label>Поставени части:</label><span id="result-placed" class="param-value">-</span></div>
+</div>
+<div class="panel panel-right">
+<div class="panel-header-row">
+<h2>Визуализация</h2>
+<div class="btn-row">
+<button id="btn-zoom-in" class="btn-secondary" title="Zoom In">+</button>
+<button id="btn-zoom-out" class="btn-secondary" title="Zoom Out">−</button>
+<button id="btn-zoom-reset" class="btn-secondary" title="Reset View">↺</button>
+<button id="btn-export-csv" class="btn-secondary" title="Export CSV">📊 CSV</button>
+<button id="btn-export-png" class="btn-secondary" title="Export PNG">🖼 PNG</button>
+<button id="btn-export-pdf" class="btn-secondary" title="Export PDF">📄 PDF</button>
+</div></div>
+<div id="visualization-container">
+<div id="svg-container"></div>
+</div></div>
+</div></div>
 
-                <!-- Tab: Settings -->
-                <div id="tab-settings" class="tab-content active">
-                    <div class="settings-panel">
-                        <div class="settings-row">
-                            <div class="settings-group">
-                                <label for="input-iterations">Iterations</label>
-                                <input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000">
-                            </div>
-                            <div class="settings-group">
-                                <label for="input-beam-width">Beam Width</label>
-                                <input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100">
-                            </div>
-                            <div class="settings-group">
-                                <label for="input-seed">Seed</label>
-                                <input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646">
-                            </div>
-                        </div>
-                        <div class="settings-row">
-                            <div class="settings-group">
-                                <label>Quality Profile</label>
-                                <div class="radio-group">
-                                    <label class="radio-label"><input type="radio" name="quality" value="fast"> Fast</label>
-                                    <label class="radio-label"><input type="radio" name="quality" value="balanced" checked> Balanced</label>
-                                    <label class="radio-label"><input type="radio" name="quality" value="precise"> Precise</label>
-                                </div>
-                            </div>
-                            <div class="settings-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="input-randomize"> Randomize
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Data -->
-                <div id="tab-data" class="tab-content">
-                    <!-- Sheet Section -->
-                    <div class="data-section">
-                        <div class="data-section-header">
-                            <h3>Sheet</h3>
-                            <div class="btn-row">
-                                <button id="btn-sheet-import" class="btn-secondary">📂 Import</button>
-                                <button id="btn-sheet-export" class="btn-secondary">💾 Export</button>
-                            </div>
-                        </div>
-                        <div class="sheet-form">
-                            <div class="settings-group">
-                                <label for="input-sheet-w">Width (mm)</label>
-                                <input type="number" id="input-sheet-w" class="settings-input" value="2440" min="1" max="5000">
-                            </div>
-                            <div class="settings-group">
-                                <label for="input-sheet-h">Height (mm)</label>
-                                <input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000">
-                            </div>
-                            <div class="settings-group">
-                                <label for="input-sheet-kerf">Kerf (mm)</label>
-                                <input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50">
-                            </div>
-                            <div class="settings-group" style="align-self: flex-end;">
-                                <button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;">Apply</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Parts Section -->
-                    <div class="data-section">
-                        <div class="data-section-header">
-                            <h3>Parts (<span id="parts-count-label">0</span>)</h3>
-                            <div class="btn-row">
-                                <button id="btn-parts-import" class="btn-secondary">📂 Import</button>
-                                <button id="btn-parts-export" class="btn-secondary">💾 Export</button>
-                            </div>
-                        </div>
-
-                        <!-- Add Part Form -->
-                        <div class="part-add-form">
-                            <input type="text" id="input-part-name" class="text-input" placeholder="Name">
-                            <input type="number" id="input-part-w" class="settings-input" placeholder="W" min="1" max="5000">
-                            <input type="number" id="input-part-h" class="settings-input" placeholder="H" min="1" max="5000">
-                            <input type="number" id="input-part-qty" class="settings-input" value="1" min="1" max="999">
-                            <input type="number" id="input-part-edges" class="settings-input" placeholder="Edges" value="0" min="0" max="4">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="input-part-rotate"> Rot
-                            </label>
-                            <button id="btn-part-add" class="btn-primary" style="padding:6px 16px;font-size:14px;">+ Add</button>
-                        </div>
-
-                        <!-- Parts Table -->
-                        <div id="parts-table-container">
-                            <table id="parts-table" class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Name</th>
-                                        <th>W (mm)</th>
-                                        <th>H (mm)</th>
-                                        <th>Qty</th>
-                                        <th>Edges</th>
-                                        <th>Rot</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="parts-table-body">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Results -->
-                <div id="tab-results" class="tab-content split-view">
-                    <div class="panel panel-left">
-                        <h2>Параметри</h2>
-                        <div class="param-group">
-                            <label>Лист (Ш x В):</label>
-                            <span id="display-sheet-size" class="param-value">-</span>
-                        </div>
-                        <div class="param-group">
-                            <label>Kerf:</label>
-                            <span id="display-kerf" class="param-value">-</span>
-                        </div>
-                        <div class="param-group">
-                            <label>Части:</label>
-                            <span id="display-parts-count" class="param-value">-</span>
-                        </div>
-                        <hr>
-                        <h2>Резултат</h2>
-                        <div class="param-group">
-                            <label>Листове:</label>
-                            <span id="result-sheets" class="param-value highlight">-</span>
-                        </div>
-                        <div class="param-group">
-                            <label>Ср. ефективност:</label>
-                            <span id="result-efficiency" class="param-value highlight">-</span>
-                        </div>
-                        <div class="param-group">
-                            <label>Score:</label>
-                            <span id="result-score" class="param-value">-</span>
-                        </div>
-                        <div class="param-group">
-                            <label>Поставени части:</label>
-                            <span id="result-placed" class="param-value">-</span>
-                        </div>
-                    </div>
-                    <div class="panel panel-right">
-                        <div class="panel-header-row">
-                            <h2>Визуализация</h2>
-                            <div class="btn-row">
-                                <button id="btn-export-csv" class="btn-secondary" title="Export to CSV">📊 CSV</button>
-                                <button id="btn-export-png" class="btn-secondary" title="Export as PNG">🖼 PNG</button>
-                            </div>
-                        </div>
-                        <div id="visualization-container">
-                            <div id="svg-container"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Progress Bar -->
-                <div id="progress-container" class="progress-container hidden">
-                    <div class="progress-bar">
-                        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
-                    </div>
-                    <span id="progress-text" class="progress-text">0%</span>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script src="/js/neutralino.js"></script>
-    <script src="/js/app/model/Rect.js"></script>
-    <script src="/js/app/model/Part.js"></script>
-    <script src="/js/app/model/Sheet.js"></script>
-    <script src="/js/app/engine/Optimizer.js"></script>
-    <script src="/js/app/ConfigManager.js"></script>
-    <script src="/js/app/ProjectManager.js"></script>
-    <script src="/js/main.js"></script>
+<div id="progress-container" class="progress-container hidden">
+<div class="progress-bar"><div id="progress-fill" class="progress-fill" style="width:0%;"></div></div>
+<span id="progress-text" class="progress-text">0%</span>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/neutralino.js"></script>
+<script src="/js/app/model/Rect.js"></script>
+<script src="/js/app/model/Part.js"></script>
+<script src="/js/app/model/Sheet.js"></script>
+<script src="/js/app/engine/Optimizer.js"></script>
+<script src="/js/app/ConfigManager.js"></script>
+<script src="/js/app/ProjectManager.js"></script>
+<script src="/js/main.js"></script>
 </body>
 </html>

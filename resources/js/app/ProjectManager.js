@@ -219,6 +219,22 @@ class ProjectManager {
         }
     }
 
+    /**
+     * Разгръща списъка с части според qty.
+     * Напр. Side_Left с qty=2 → два отделни Part обекта.
+     * Не променя оригиналния this.parts масив.
+     */
+    expandParts() {
+        var expanded = [];
+        for (var i = 0; i < this.parts.length; i++) {
+            var p = this.parts[i];
+            for (var j = 0; j < p.qty; j++) {
+                expanded.push(p.copy());
+            }
+        }
+        return expanded;
+    }
+
     async runOptimization(iterations, beamWidth, randomize, onProgress) {
         if (!this.optimizer) {
             throw new Error('ProjectManager: No project loaded.');
@@ -228,11 +244,15 @@ class ProjectManager {
             throw new Error('ProjectManager: No parts to optimize.');
         }
 
-        console.log('ProjectManager.runOptimization: parts=' + this.parts.length +
+        // Разгръщаме според qty — динамично, без да променяме оригиналния списък
+        var expandedParts = this.expandParts();
+
+        console.log('ProjectManager.runOptimization: compactParts=' + this.parts.length +
+            ', expandedParts=' + expandedParts.length +
             ', sheet=' + this.sheetW + 'x' + this.sheetH + ', kerf=' + this.kerf +
             ', iterations=' + iterations + ', beamWidth=' + beamWidth + ', randomize=' + randomize);
 
-        var layout = await this.optimizer.optimize(this.parts, iterations, beamWidth, randomize, onProgress);
+        var layout = await this.optimizer.optimize(expandedParts, iterations, beamWidth, randomize, onProgress);
         this.result = layout;
 
         return this.getResultSummary();
