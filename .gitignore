@@ -1,0 +1,5 @@
+dist/
+node_modules/
+.neutralino/
+*.log
+.DS_Store

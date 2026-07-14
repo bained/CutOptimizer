@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CutOptimizer</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>CutOptimizer</h1>
+            <span class="subtitle">Оптимизация на разкроя на плоскости</span>
+        </header>
+
+        <main id="main-content">
+            <div id="loading">
+                <p>Зареждане на проекта...</p>
+                <div class="spinner"></div>
+            </div>
+
+            <div id="results-panel" class="hidden">
+                <div class="toolbar">
+                    <button id="btn-run" class="btn-primary" disabled>▶ Стартирай оптимизация</button>
+                    <span id="status-text">Готов</span>
+                </div>
+
+                <div class="split-view">
+                    <div class="panel panel-left">
+                        <h2>Параметри</h2>
+                        <div class="param-group">
+                            <label>Лист (Ш x В):</label>
+                            <span id="display-sheet-size" class="param-value">-</span>
+                        </div>
+                        <div class="param-group">
+                            <label>Kerf:</label>
+                            <span id="display-kerf" class="param-value">-</span>
+                        </div>
+                        <div class="param-group">
+                            <label>Части:</label>
+                            <span id="display-parts-count" class="param-value">-</span>
+                        </div>
+
+                        <hr>
+
+                        <h2>Резултат</h2>
+                        <div class="param-group">
+                            <label>Листове:</label>
+                            <span id="result-sheets" class="param-value highlight">-</span>
+                        </div>
+                        <div class="param-group">
+                            <label>Ср. ефективност:</label>
+                            <span id="result-efficiency" class="param-value highlight">-</span>
+                        </div>
+                        <div class="param-group">
+                            <label>Score:</label>
+                            <span id="result-score" class="param-value">-</span>
+                        </div>
+                        <div class="param-group">
+                            <label>Поставени части:</label>
+                            <span id="result-placed" class="param-value">-</span>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-right">
+                        <h2>Визуализация</h2>
+                        <div id="visualization-container">
+                            <div id="svg-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/neutralino.js"></script>
+    <script src="/js/app/model/Rect.js"></script>
+    <script src="/js/app/model/Part.js"></script>
+    <script src="/js/app/model/Sheet.js"></script>
+    <script src="/js/app/engine/Optimizer.js"></script>
+    <script src="/js/app/ConfigManager.js"></script>
+    <script src="/js/app/ProjectManager.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
