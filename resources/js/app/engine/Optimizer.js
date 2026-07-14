@@ -236,11 +236,18 @@ class Optimizer {
      * @returns {Promise<Layout>}
      */
     async optimize(parts, iterations, beamWidth, randomize, onProgress) {
+        // Проверка за валидност на входните данни
+        if (!parts || !Array.isArray(parts) || parts.length === 0) {
+            console.error('Optimizer: No parts provided! parts=' + JSON.stringify(parts));
+            return new Layout();
+        }
+
+        console.log('Optimizer.optimize: parts=' + parts.length + ', iterations=' + iterations +
+            ', beamWidth=' + beamWidth + ', randomize=' + randomize);
+
         var best = null;
 
         for (var it = 0; it < iterations; it++) {
-            // Ако randomize е включен, генерираме нов seed за всяка итерация
-
             // Позволяваме на UI да се опресни между итерациите
             await new Promise(function(resolve) { setTimeout(resolve, 0); });
             if (randomize) {

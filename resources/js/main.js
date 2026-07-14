@@ -33,12 +33,8 @@ async function initApp() {
         projectManager = new ProjectManager(basePath + '/config.ini');
         var meta = await projectManager.loadProject(basePath + '/kitchen_project.json');
 
-        document.getElementById('display-sheet-size').textContent =
-            meta.sheetW + ' x ' + meta.sheetH + ' mm';
-        document.getElementById('display-kerf').textContent =
-            meta.kerf + ' mm';
-        document.getElementById('display-parts-count').textContent =
-            meta.partCount + ' части';
+        // Попълваме UI от store-а
+        refreshAllUI(meta);
 
         document.getElementById('btn-run').disabled = false;
         document.getElementById('status-text').textContent = 'Проектът е зареден. Натисни "Стартирай"';
@@ -52,12 +48,125 @@ async function initApp() {
     }
 }
 
-// ===================== НАСТРОЙКИ (Settings) =====================
+// ===================== UI REFRESH =====================
 
-function toggleSettings() {
-    var panel = document.getElementById('settings-panel');
-    panel.classList.toggle('hidden');
+function refreshAllUI(meta) {
+    if (!meta && projectManager) {
+        meta = {
+            sheetW: projectManager.sheetW,
+            sheetH: projectManager.sheetH,
+            kerf: projectManager.kerf,
+            partCount: projectManager.parts.length
+        };
+    }
+
+    if (meta) {
+        document.getElementById('display-sheet-size').textContent =
+            meta.sheetW + ' x ' + meta.sheetH + ' mm';
+        document.getElementById('display-kerf').textContent =
+            meta.kerf + ' mm';
+        document.getElementById('display-parts-count').textContent =
+            meta.partCount + ' части';
+
+        // Data tab sheet fields
+        document.getElementById('input-sheet-w').value = meta.sheetW;
+        document.getElementById('input-sheet-h').value = meta.sheetH;
+        document.getElementById('input-sheet-kerf').value = meta.kerf;
+    }
+
+    refreshPartsTable();
 }
+
+function refreshPartsTable() {
+    var tbody = document.getElementById('parts-table-body');
+    var label = document.getElementById('parts-count-label');
+
+    if (!tbody || !projectManager) return;
+
+    tbody.innerHTML = '';
+    var count = projectManager.parts.length;
+
+    if (label) label.textContent = count;
+
+    for (var i = 0; i < count; i++) {
+        var p = projectManager.parts[i];
+        var tr = document.createElement('tr');
+
+        tr.innerHTML =
+            '<td>' + (i + 1) + '</td>' +
+            '<td><input type="text" class="edit-name" value="' + escapeHtml(p.name) + '"></td>' +
+            '<td><input type="number" class="edit-w" value="' + p.w + '" min="1"></td>' +
+            '<td><input type="number" class="edit-h" value="' + p.h + '" min="1"></td>' +
+            '<td><input type="checkbox" class="edit-rot" ' + (p.canRotate ? 'checked' : '') + '></td>' +
+            '<td><button class="btn-icon-small" data-index="' + i + '" title="Delete">✕</button></td>';
+
+        tbody.appendChild(tr);
+
+        // Save on change events
+        var nameInput = tr.querySelector('.edit-name');
+        var wInput = tr.querySelector('.edit-w');
+        var hInput = tr.querySelector('.edit-h');
+        var rotInput = tr.querySelector('.edit-rot');
+        var delBtn = tr.querySelector('.btn-icon-small');
+
+        function makeSaveHandler(idx, nameEl, wEl, hEl, rotEl) {
+            return function() {
+                try {
+                    projectManager.updatePart(idx, nameEl.value,
+                        parseInt(wEl.value, 10) || 0,
+                        parseInt(hEl.value, 10) || 0,
+                        rotEl.checked);
+                    refreshPartsTable();
+                } catch (err) {
+                    document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+                }
+            };
+        }
+
+        nameInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
+        wInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
+        hInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
+        rotInput.addEventListener('change', makeSaveHandler(i, nameInput, wInput, hInput, rotInput));
+
+        delBtn.addEventListener('click', function() {
+            var idx = parseInt(this.getAttribute('data-index'), 10);
+            try {
+                projectManager.removePart(idx);
+                refreshPartsTable();
+                refreshAllUI();
+                document.getElementById('status-text').textContent = 'Частта е премахната';
+            } catch (err) {
+                document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+            }
+        });
+    }
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+}
+
+// ===================== TABS =====================
+
+function switchTab(tabName) {
+    var tabs = document.querySelectorAll('.tab-content');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
+
+    var btns = document.querySelectorAll('.tab-btn');
+    for (var j = 0; j < btns.length; j++) {
+        btns[j].classList.remove('active');
+    }
+
+    var target = document.getElementById('tab-' + tabName);
+    if (target) target.classList.add('active');
+
+    var btn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+    if (btn) btn.classList.add('active');
+}
+
+// ===================== SETTINGS =====================
 
 function onQualityChange() {
     var quality = document.querySelector('input[name="quality"]:checked');
@@ -96,6 +205,108 @@ function getSettings() {
     };
 }
 
+// ===================== DATA TAB HANDLERS =====================
+
+function onSheetApply() {
+    try {
+        var w = parseInt(document.getElementById('input-sheet-w').value, 10) || 0;
+        var h = parseInt(document.getElementById('input-sheet-h').value, 10) || 0;
+        var kerf = parseInt(document.getElementById('input-sheet-kerf').value, 10) || 0;
+
+        projectManager.updateSheet(w, h, kerf);
+        refreshAllUI();
+        document.getElementById('status-text').textContent = 'Sheet updated: ' + w + 'x' + h + ', kerf=' + kerf;
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
+function onPartAdd() {
+    try {
+        var name = document.getElementById('input-part-name').value;
+        var w = parseInt(document.getElementById('input-part-w').value, 10) || 0;
+        var h = parseInt(document.getElementById('input-part-h').value, 10) || 0;
+        var rot = document.getElementById('input-part-rotate').checked;
+
+        projectManager.addPart(name, w, h, rot);
+
+        // Изчистваме формата
+        document.getElementById('input-part-name').value = '';
+        document.getElementById('input-part-w').value = '';
+        document.getElementById('input-part-h').value = '';
+        document.getElementById('input-part-rotate').checked = false;
+
+        refreshPartsTable();
+        refreshAllUI();
+        document.getElementById('status-text').textContent = 'Част "' + name + '" е добавена';
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
+async function onSheetImport() {
+    try {
+        var result = await Neutralino.os.showOpenDialog('Import Sheet JSON', {
+            filters: [{ name: 'JSON files', extensions: ['json'] }]
+        });
+        if (!result || result.length === 0) return;
+
+        var content = await Neutralino.filesystem.readFile(result[0]);
+        projectManager.importSheetFromJSON(content);
+        refreshAllUI();
+        document.getElementById('status-text').textContent = 'Sheet imported';
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
+async function onSheetExport() {
+    try {
+        var result = await Neutralino.os.showSaveDialog('Export Sheet JSON', {
+            filters: [{ name: 'JSON files', extensions: ['json'] }]
+        });
+        if (!result) return;
+
+        var json = projectManager.exportSheetToJSON();
+        await Neutralino.filesystem.writeFile(result, json);
+        document.getElementById('status-text').textContent = 'Sheet exported';
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
+async function onPartsImport() {
+    try {
+        var result = await Neutralino.os.showOpenDialog('Import Parts JSON', {
+            filters: [{ name: 'JSON files', extensions: ['json'] }]
+        });
+        if (!result || result.length === 0) return;
+
+        var content = await Neutralino.filesystem.readFile(result[0]);
+        projectManager.importPartsFromJSON(content);
+        refreshPartsTable();
+        refreshAllUI();
+        document.getElementById('status-text').textContent = 'Parts imported: ' + projectManager.parts.length;
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
+async function onPartsExport() {
+    try {
+        var result = await Neutralino.os.showSaveDialog('Export Parts JSON', {
+            filters: [{ name: 'JSON files', extensions: ['json'] }]
+        });
+        if (!result) return;
+
+        var json = projectManager.exportPartsToJSON();
+        await Neutralino.filesystem.writeFile(result, json);
+        document.getElementById('status-text').textContent = 'Parts exported: ' + projectManager.parts.length;
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
+    }
+}
+
 // ===================== ОПТИМИЗАЦИЯ =====================
 
 async function runOptimization() {
@@ -107,13 +318,11 @@ async function runOptimization() {
     var progressFill = document.getElementById('progress-fill');
     var progressText = document.getElementById('progress-text');
 
-    // Взимаме настройките
     var settings = getSettings();
 
     btn.disabled = true;
     statusText.textContent = 'Оптимизация...';
 
-    // Показваме прогреса
     progressContainer.classList.remove('hidden');
     progressFill.style.width = '0%';
     progressText.textContent = '0%';
@@ -121,7 +330,6 @@ async function runOptimization() {
     try {
         var startTime = performance.now();
 
-        // Progress callback — обновява UI през setTimeout, за да не замръзва
         var summary = await projectManager.runOptimization(
             settings.iterations,
             settings.beamWidth,
@@ -144,6 +352,9 @@ async function runOptimization() {
             summary.totalPlacedParts + ' / ' + projectManager.parts.length;
 
         statusText.textContent = 'Готово за ' + elapsed + 's';
+
+        // Превключваме към Results tab
+        switchTab('results');
 
         var layout = projectManager.getLayout();
         if (layout) {
@@ -218,126 +429,46 @@ function renderSVG(layout) {
     container.innerHTML = svg;
 }
 
-// ===================== LOAD / HELP =====================
-
-async function onLoadParts() {
-    try {
-        var result = await Neutralino.os.showOpenDialog('Избери JSON с части', {
-            filters: [{ name: 'JSON files', extensions: ['json'] }]
-        });
-
-        if (!result || result.length === 0) return;
-
-        var filePath = result[0];
-        console.log('Loading parts from:', filePath);
-
-        var content = await Neutralino.filesystem.readFile(filePath);
-        var data = JSON.parse(content);
-
-        // Актуализираме само частите, запазваме sheet-а
-        projectManager.parts = [];
-        for (var i = 0; i < data.parts.length; i++) {
-            var p = data.parts[i];
-            projectManager.parts.push(new Part(
-                p.n,
-                projectManager.parseNumericValue(p.w),
-                projectManager.parseNumericValue(p.h),
-                projectManager.parseNumericValue(p.r) === 1
-            ));
-        }
-
-        // Актуализираме дисплея
-        document.getElementById('display-parts-count').textContent =
-            projectManager.parts.length + ' части';
-        document.getElementById('status-text').textContent =
-            'Заредени ' + projectManager.parts.length + ' части';
-
-    } catch (err) {
-        console.error('Load parts error:', err);
-        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
-    }
-}
-
-async function onLoadSheet() {
-    try {
-        var result = await Neutralino.os.showOpenDialog('Избери JSON с лист', {
-            filters: [{ name: 'JSON files', extensions: ['json'] }]
-        });
-
-        if (!result || result.length === 0) return;
-
-        var filePath = result[0];
-        console.log('Loading sheet from:', filePath);
-
-        var content = await Neutralino.filesystem.readFile(filePath);
-        var data = JSON.parse(content);
-
-        // Актуализираме sheet параметрите, запазваме частите
-        var sheetW = projectManager.parseNumericValue(data.sheetW);
-        var sheetH = projectManager.parseNumericValue(data.sheetH);
-        var kerf = projectManager.parseNumericValue(data.kerf);
-
-        projectManager.sheetW = sheetW;
-        projectManager.sheetH = sheetH;
-        projectManager.kerf = kerf;
-        projectManager.optimizer = new Optimizer(sheetW, sheetH, kerf);
-
-        document.getElementById('display-sheet-size').textContent =
-            sheetW + ' x ' + sheetH + ' mm';
-        document.getElementById('display-kerf').textContent =
-            kerf + ' mm';
-        document.getElementById('status-text').textContent =
-            'Листът е зареден: ' + sheetW + 'x' + sheetH;
-
-    } catch (err) {
-        console.error('Load sheet error:', err);
-        document.getElementById('status-text').textContent = 'Грешка: ' + err.message;
-    }
-}
-
-function onHelp() {
-    var helpText = document.getElementById('help-text');
-    helpText.classList.toggle('hidden');
-}
-
 // ===================== DOM СЪБИТИЯ =====================
 
 document.addEventListener('DOMContentLoaded', function() {
     // Run button
     var btn = document.getElementById('btn-run');
-    if (btn) {
-        btn.addEventListener('click', runOptimization);
+    if (btn) btn.addEventListener('click', runOptimization);
+
+    // Tab buttons
+    var tabBtns = document.querySelectorAll('.tab-btn');
+    for (var i = 0; i < tabBtns.length; i++) {
+        tabBtns[i].addEventListener('click', function() {
+            switchTab(this.getAttribute('data-tab'));
+        });
     }
 
-    // Settings toggle
-    var settingsBtn = document.getElementById('btn-settings-toggle');
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', toggleSettings);
-    }
-
-    // Quality profile radio buttons
+    // Quality profile
     var qualityRadios = document.querySelectorAll('input[name="quality"]');
-    for (var i = 0; i < qualityRadios.length; i++) {
-        qualityRadios[i].addEventListener('change', onQualityChange);
+    for (var j = 0; j < qualityRadios.length; j++) {
+        qualityRadios[j].addEventListener('change', onQualityChange);
     }
 
-    // Load parts button
-    var loadPartsBtn = document.getElementById('btn-load-parts');
-    if (loadPartsBtn) {
-        loadPartsBtn.addEventListener('click', onLoadParts);
-    }
+    // Data tab: Sheet
+    var sheetApply = document.getElementById('btn-sheet-apply');
+    if (sheetApply) sheetApply.addEventListener('click', onSheetApply);
 
-    // Load sheet button
-    var loadSheetBtn = document.getElementById('btn-load-sheet');
-    if (loadSheetBtn) {
-        loadSheetBtn.addEventListener('click', onLoadSheet);
-    }
+    var sheetImport = document.getElementById('btn-sheet-import');
+    if (sheetImport) sheetImport.addEventListener('click', onSheetImport);
 
-    // Help button
-    var helpBtn = document.getElementById('btn-help');
-    if (helpBtn) {
-        helpBtn.addEventListener('click', onHelp);
-    }
+    var sheetExport = document.getElementById('btn-sheet-export');
+    if (sheetExport) sheetExport.addEventListener('click', onSheetExport);
+
+    // Data tab: Parts
+    var partAdd = document.getElementById('btn-part-add');
+    if (partAdd) partAdd.addEventListener('click', onPartAdd);
+
+    var partsImport = document.getElementById('btn-parts-import');
+    if (partsImport) partsImport.addEventListener('click', onPartsImport);
+
+    var partsExport = document.getElementById('btn-parts-export');
+    if (partsExport) partsExport.addEventListener('click', onPartsExport);
 });
 
 window.addEventListener('error', function(e) {

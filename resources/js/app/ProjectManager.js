@@ -2,6 +2,7 @@
 
 /**
  * ProjectManager — управлява жизнения цикъл на един проект.
+ * Действа като централен Store за всички данни.
  */
 class ProjectManager {
     /**
@@ -11,9 +12,9 @@ class ProjectManager {
         this.config = new ConfigManager(configPath);
         this.optimizer = null;
         this.parts = [];
-        this.sheetW = 0;
-        this.sheetH = 0;
-        this.kerf = 0;
+        this.sheetW = 2440;
+        this.sheetH = 2070;
+        this.kerf = 4;
         this.result = null;
         this.projectFilePath = '';
     }
@@ -24,6 +25,141 @@ class ProjectManager {
         }
         return val;
     }
+
+    // ==================== SHEET ====================
+
+    /**
+     * Актуализира параметрите на листа и пресъздава Optimizer-а.
+     */
+    updateSheet(w, h, kerf) {
+        if (w <= 0 || h <= 0 || kerf < 0) {
+            throw new Error('Sheet dimensions must be positive numbers.');
+        }
+        this.sheetW = w;
+        this.sheetH = h;
+        this.kerf = kerf;
+        this.optimizer = new Optimizer(w, h, kerf);
+        this.result = null;
+    }
+
+    /**
+     * Връща sheet параметри като обект.
+     */
+    getSheetData() {
+        return {
+            sheetW: this.sheetW,
+            sheetH: this.sheetH,
+            kerf: this.kerf
+        };
+    }
+
+    /**
+     * Връща sheet данни като JSON string.
+     */
+    exportSheetToJSON() {
+        return JSON.stringify(this.getSheetData(), null, 2);
+    }
+
+    /**
+     * Зарежда sheet от JSON string.
+     */
+    importSheetFromJSON(jsonString) {
+        var data = JSON.parse(jsonString);
+        var w = this.parseNumericValue(data.sheetW);
+        var h = this.parseNumericValue(data.sheetH);
+        var kerf = this.parseNumericValue(data.kerf);
+        this.updateSheet(w, h, kerf);
+    }
+
+    // ==================== PARTS ====================
+
+    /**
+     * Добавя нова част.
+     */
+    addPart(name, w, h, canRotate) {
+        if (!name || name.trim() === '') {
+            throw new Error('Part name cannot be empty.');
+        }
+        if (w <= 0 || h <= 0) {
+            throw new Error('Part dimensions must be positive numbers.');
+        }
+        this.parts.push(new Part(name.trim(), w, h, !!canRotate));
+        this.result = null;
+    }
+
+    /**
+     * Премахва част по индекс.
+     */
+    removePart(index) {
+        if (index < 0 || index >= this.parts.length) {
+            throw new Error('Invalid part index.');
+        }
+        this.parts.splice(index, 1);
+        this.result = null;
+    }
+
+    /**
+     * Редактира част по индекс.
+     */
+    updatePart(index, name, w, h, canRotate) {
+        if (index < 0 || index >= this.parts.length) {
+            throw new Error('Invalid part index.');
+        }
+        if (!name || name.trim() === '') {
+            throw new Error('Part name cannot be empty.');
+        }
+        if (w <= 0 || h <= 0) {
+            throw new Error('Part dimensions must be positive numbers.');
+        }
+        this.parts[index] = new Part(name.trim(), w, h, !!canRotate);
+        this.result = null;
+    }
+
+    /**
+     * Връща всички части като масив.
+     */
+    getPartsData() {
+        var result = [];
+        for (var i = 0; i < this.parts.length; i++) {
+            var p = this.parts[i];
+            result.push({
+                n: p.name,
+                w: p.w,
+                h: p.h,
+                r: p.canRotate ? 1 : 0
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Връща частите като JSON string.
+     */
+    exportPartsToJSON() {
+        return JSON.stringify({ parts: this.getPartsData() }, null, 2);
+    }
+
+    /**
+     * Зарежда части от JSON string.
+     */
+    importPartsFromJSON(jsonString) {
+        var data = JSON.parse(jsonString);
+        if (!data.parts || !Array.isArray(data.parts)) {
+            throw new Error('Invalid parts JSON: missing "parts" array.');
+        }
+        this.parts = [];
+        for (var i = 0; i < data.parts.length; i++) {
+            var p = data.parts[i];
+            this.addPart(
+                p.n,
+                this.parseNumericValue(p.w),
+                this.parseNumericValue(p.h),
+                this.parseNumericValue(p.r) === 1
+            );
+        }
+    }
+
+    // ==================== FILE LOAD ====================
 
     async loadProject(filePath) {
         try {
@@ -39,15 +175,14 @@ class ProjectManager {
             this.kerf = this.parseNumericValue(data.kerf);
 
             this.parts = [];
-            for (let i = 0; i < data.parts.length; i++) {
-                const p = data.parts[i];
-                const part = new Part(
+            for (var i = 0; i < data.parts.length; i++) {
+                var p = data.parts[i];
+                this.parts.push(new Part(
                     p.n,
                     this.parseNumericValue(p.w),
                     this.parseNumericValue(p.h),
                     this.parseNumericValue(p.r) === 1
-                );
-                this.parts.push(part);
+                ));
             }
 
             this.projectFilePath = filePath;
@@ -74,11 +209,15 @@ class ProjectManager {
             throw new Error('ProjectManager: No project loaded.');
         }
 
-        if (this.parts.length === 0) {
+        if (!this.parts || !Array.isArray(this.parts) || this.parts.length === 0) {
             throw new Error('ProjectManager: No parts to optimize.');
         }
 
-        var layout = this.optimizer.optimize(this.parts, iterations, beamWidth, randomize, onProgress);
+        console.log('ProjectManager.runOptimization: parts=' + this.parts.length +
+            ', sheet=' + this.sheetW + 'x' + this.sheetH + ', kerf=' + this.kerf +
+            ', iterations=' + iterations + ', beamWidth=' + beamWidth + ', randomize=' + randomize);
+
+        var layout = await this.optimizer.optimize(this.parts, iterations, beamWidth, randomize, onProgress);
         this.result = layout;
 
         return this.getResultSummary();

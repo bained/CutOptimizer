@@ -24,67 +24,123 @@
                 <div class="toolbar">
                     <button id="btn-run" class="btn-primary" disabled>▶ Стартирай</button>
                     <span id="status-text">Готов</span>
-                    <button id="btn-settings-toggle" class="btn-icon" title="Настройки">⚙</button>
                 </div>
 
-                <!-- Settings Panel (collapsible) -->
-                <div id="settings-panel" class="settings-panel hidden">
-                    <div class="settings-row">
-                        <div class="settings-group">
-                            <label for="input-iterations">Итерации</label>
-                            <input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000">
+                <!-- Tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="settings">⚙ Settings</button>
+                    <button class="tab-btn" data-tab="data">📋 Data</button>
+                    <button class="tab-btn" data-tab="results">📊 Results</button>
+                </div>
+
+                <!-- Tab: Settings -->
+                <div id="tab-settings" class="tab-content active">
+                    <div class="settings-panel">
+                        <div class="settings-row">
+                            <div class="settings-group">
+                                <label for="input-iterations">Iterations</label>
+                                <input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000">
+                            </div>
+                            <div class="settings-group">
+                                <label for="input-beam-width">Beam Width</label>
+                                <input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100">
+                            </div>
+                            <div class="settings-group">
+                                <label for="input-seed">Seed</label>
+                                <input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646">
+                            </div>
                         </div>
-                        <div class="settings-group">
-                            <label for="input-beam-width">Beam Width</label>
-                            <input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100">
-                        </div>
-                        <div class="settings-group">
-                            <label for="input-seed">Seed</label>
-                            <input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646">
-                        </div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-group">
-                            <label>Quality Profile</label>
-                            <div class="radio-group">
-                                <label class="radio-label">
-                                    <input type="radio" name="quality" value="fast"> Fast
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="quality" value="balanced" checked> Balanced
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="quality" value="precise"> Precise
+                        <div class="settings-row">
+                            <div class="settings-group">
+                                <label>Quality Profile</label>
+                                <div class="radio-group">
+                                    <label class="radio-label"><input type="radio" name="quality" value="fast"> Fast</label>
+                                    <label class="radio-label"><input type="radio" name="quality" value="balanced" checked> Balanced</label>
+                                    <label class="radio-label"><input type="radio" name="quality" value="precise"> Precise</label>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="input-randomize"> Randomize
                                 </label>
                             </div>
                         </div>
-                        <div class="settings-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="input-randomize"> Randomize
-                            </label>
-                        </div>
                     </div>
-                    <div class="settings-row">
-                        <div class="settings-group">
-                            <label>Проект</label>
+                </div>
+
+                <!-- Tab: Data -->
+                <div id="tab-data" class="tab-content">
+                    <!-- Sheet Section -->
+                    <div class="data-section">
+                        <div class="data-section-header">
+                            <h3>Sheet</h3>
                             <div class="btn-row">
-                                <button id="btn-load-parts" class="btn-secondary">📂 Load Parts</button>
-                                <button id="btn-load-sheet" class="btn-secondary">📂 Load Sheet</button>
-                                <button id="btn-help" class="btn-secondary btn-help" title="Help">?</button>
+                                <button id="btn-sheet-import" class="btn-secondary">📂 Import</button>
+                                <button id="btn-sheet-export" class="btn-secondary">💾 Export</button>
+                            </div>
+                        </div>
+                        <div class="sheet-form">
+                            <div class="settings-group">
+                                <label for="input-sheet-w">Width (mm)</label>
+                                <input type="number" id="input-sheet-w" class="settings-input" value="2440" min="1" max="5000">
+                            </div>
+                            <div class="settings-group">
+                                <label for="input-sheet-h">Height (mm)</label>
+                                <input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000">
+                            </div>
+                            <div class="settings-group">
+                                <label for="input-sheet-kerf">Kerf (mm)</label>
+                                <input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50">
+                            </div>
+                            <div class="settings-group" style="align-self: flex-end;">
+                                <button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;">Apply</button>
                             </div>
                         </div>
                     </div>
-                    <div id="help-text" class="help-text hidden">
-                        <p><strong>Iterations:</strong> Брой итерации на алгоритъма. Повече = по-добър резултат, но по-бавно.</p>
-                        <p><strong>Beam Width:</strong> Брой кандидати, които се запазват на всяка стъпка. По-висок = по-прецизно, но по-бавно.</p>
-                        <p><strong>Seed:</strong> Начална стойност за рандомизатора. Еднакъв seed = еднакви резултати.</p>
-                        <p><strong>Quality Profile:</strong> Fast = 10 итерации, Balanced = 50, Precise = 200.</p>
-                        <p><strong>Randomize:</strong> Ако е включен, всяко пускане дава различен резултат.</p>
+
+                    <!-- Parts Section -->
+                    <div class="data-section">
+                        <div class="data-section-header">
+                            <h3>Parts (<span id="parts-count-label">0</span>)</h3>
+                            <div class="btn-row">
+                                <button id="btn-parts-import" class="btn-secondary">📂 Import</button>
+                                <button id="btn-parts-export" class="btn-secondary">💾 Export</button>
+                            </div>
+                        </div>
+
+                        <!-- Add Part Form -->
+                        <div class="part-add-form">
+                            <input type="text" id="input-part-name" class="text-input" placeholder="Name">
+                            <input type="number" id="input-part-w" class="settings-input" placeholder="W" min="1" max="5000">
+                            <input type="number" id="input-part-h" class="settings-input" placeholder="H" min="1" max="5000">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="input-part-rotate"> Rot
+                            </label>
+                            <button id="btn-part-add" class="btn-primary" style="padding:6px 16px;font-size:14px;">+ Add</button>
+                        </div>
+
+                        <!-- Parts Table -->
+                        <div id="parts-table-container">
+                            <table id="parts-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>W (mm)</th>
+                                        <th>H (mm)</th>
+                                        <th>Rot</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="parts-table-body">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Split View -->
-                <div class="split-view">
+                <!-- Tab: Results -->
+                <div id="tab-results" class="tab-content split-view">
                     <div class="panel panel-left">
                         <h2>Параметри</h2>
                         <div class="param-group">
@@ -99,9 +155,7 @@
                             <label>Части:</label>
                             <span id="display-parts-count" class="param-value">-</span>
                         </div>
-
                         <hr>
-
                         <h2>Резултат</h2>
                         <div class="param-group">
                             <label>Листове:</label>
@@ -120,7 +174,6 @@
                             <span id="result-placed" class="param-value">-</span>
                         </div>
                     </div>
-
                     <div class="panel panel-right">
                         <h2>Визуализация</h2>
                         <div id="visualization-container">

@@ -128,8 +128,11 @@ header h1 {
 /* Main Content */
 #main-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     padding: 16px;
-    overflow-y: auto;
+    overflow: hidden;
     background: var(--color-bg);
 }
 
@@ -230,7 +233,9 @@ header h1 {
 .split-view {
     display: flex;
     gap: 16px;
-    height: calc(100vh - 160px);
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 
 .panel {
@@ -295,7 +300,8 @@ header h1 {
     background: var(--color-scrollbar-track);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    overflow: auto;
+    overflow: visible;
+    min-height: 200px;
     height: calc(100% - 40px);
 }
 
@@ -307,6 +313,8 @@ header h1 {
 #svg-container svg {
     display: block;
     margin-bottom: 16px;
+    max-width: 100%;
+    height: auto;
 }
 
 /* ----- 8. Scrollbar (Webkit) ----- */
@@ -508,7 +516,177 @@ header h1 {
     color: var(--color-text);
 }
 
-/* ----- 12. Progress Bar ----- */
+/* ----- 12. Tab System ----- */
+.tab-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.tab-btn {
+    padding: 8px 20px;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn:hover {
+    color: var(--color-text);
+}
+
+.tab-btn.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Tab-content for results needs flex and fills remaining space */
+#tab-results.tab-content.active {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* ----- 13. Data Panel ----- */
+.data-section {
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-panel);
+}
+
+.data-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.data-section-header h3 {
+    font-size: var(--font-size-lg);
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+.sheet-form {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.text-input {
+    padding: 6px 10px;
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 120px;
+}
+
+.text-input:focus {
+    border-color: var(--color-accent);
+}
+
+.part-add-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+/* Data table */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-base);
+}
+
+.data-table th {
+    text-align: left;
+    padding: 6px 8px;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-border);
+    font-size: var(--font-size-sm);
+}
+
+.data-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--color-divider);
+    vertical-align: middle;
+}
+
+.data-table tr:hover td {
+    background: var(--color-scrollbar-track);
+}
+
+.data-table .btn-icon-small {
+    background: none;
+    border: none;
+    color: var(--color-error);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: var(--radius);
+    transition: background 0.2s;
+}
+
+.data-table .btn-icon-small:hover {
+    background: #FADBD8;
+}
+
+.data-table input[type="text"],
+.data-table input[type="number"] {
+    width: 100%;
+    padding: 3px 6px;
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    color: var(--color-text);
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    outline: none;
+}
+
+.data-table input[type="text"]:focus,
+.data-table input[type="number"]:focus {
+    border-color: var(--color-accent);
+}
+
+.data-table input[type="checkbox"] {
+    accent-color: var(--color-accent);
+}
+
+#parts-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* ----- 14. Progress Bar ----- */
 .progress-container {
     display: flex;
     align-items: center;
@@ -539,7 +717,21 @@ header h1 {
     text-align: right;
 }
 
-/* ----- 13. Responsive fallback ----- */
+/* Results panel — запълва останалото пространство */
+#results-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Active tab съдържание — скролира само то */
+#tab-settings.tab-content.active,
+#tab-data.tab-content.active {
+    overflow-y: auto;
+}
+
+/* ----- 15. Responsive fallback ----- */
 @media (max-width: 900px) {
     .split-view {
         flex-direction: column;
