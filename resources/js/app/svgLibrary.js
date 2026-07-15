@@ -5,6 +5,17 @@
  */
 
 /**
+ * HTML escape — поставен тук за да не го троши auto-format.
+ */
+function escapeHtml(s) {
+    var a = String.fromCharCode(38);
+    var l = String.fromCharCode(60);
+    var g = String.fromCharCode(62);
+    var q = String.fromCharCode(34);
+    return s.replace(/&/g, a + 'amp;').replace(/</g, l).replace(/>/g, g).replace(/"/g, q);
+}
+
+/**
  * Разпределя L1/L2/S1/S2 към top/right/bottom/left според ориентацията.
  */
 function resolveStrokeWidths(width, height, L1, L2, S1, S2) {
@@ -17,7 +28,6 @@ function resolveStrokeWidths(width, height, L1, L2, S1, S2) {
 
 /**
  * Генерира SVG низ за правоъгълник с дебели линии (кантове) по четирите страни.
- * Връща string (SVG XML).
  */
 function generateRectangleSVG(params) {
     var width = params.width, height = params.height;
@@ -39,7 +49,6 @@ function generateRectangleSVG(params) {
     s += '<line x1="' + lineRightX + '" y1="' + lineTopY + '" x2="' + lineRightX + '" y2="' + lineBottomY + '" stroke="' + sCol + '" stroke-width="' + right + '" stroke-linecap="butt" />';
     s += '<line x1="' + lineRightX + '" y1="' + lineBottomY + '" x2="' + lineLeftX + '" y2="' + lineBottomY + '" stroke="' + sCol + '" stroke-width="' + bottom + '" stroke-linecap="butt" />';
     s += '<line x1="' + lineLeftX + '" y1="' + lineBottomY + '" x2="' + lineLeftX + '" y2="' + lineTopY + '" stroke="' + sCol + '" stroke-width="' + left + '" stroke-linecap="butt" />';
-    // Контур на детайла — тънка тъмносива линия
     s += '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="none" stroke="#333333" stroke-width="1.5" rx="0"/>';
     s += '</svg>';
 
@@ -47,8 +56,7 @@ function generateRectangleSVG(params) {
 }
 
 /**
- * Добавя SVG <text> елементи за размерите (W и H) към SVG DOM елемент.
- * Използва appendChild директно.
+ * Добавя SVG <text> за размерите (W и H).
  */
 function addDimensions(svgElement, width, height, L1, L2, S1, S2, color) {
     var sw = resolveStrokeWidths(width, height, L1, L2, S1, S2);
@@ -59,7 +67,6 @@ function addDimensions(svgElement, width, height, L1, L2, S1, S2, color) {
 
     var ns = 'http://www.w3.org/2000/svg';
 
-    // Ширина — горе, под горния кант
     var widthOff = top / 2 + 4;
     var wText = document.createElementNS(ns, 'text');
     wText.setAttribute('font-family', 'sans-serif');
@@ -72,7 +79,6 @@ function addDimensions(svgElement, width, height, L1, L2, S1, S2, color) {
     wText.textContent = '' + width;
     svgElement.appendChild(wText);
 
-    // Височина — вляво, вдясно от левия кант, завъртяна на -90°
     var cx = (left / 2) + left / 2 + 6;
     var cy = height / 2;
     var hText = document.createElementNS(ns, 'text');
@@ -89,7 +95,7 @@ function addDimensions(svgElement, width, height, L1, L2, S1, S2, color) {
 }
 
 /**
- * Добавя <text> елемент с името на правоъгълника в центъра му.
+ * Добавя <text> с името в центъра.
  */
 function addLabel(svgElement, labelName, width, height) {
     var ns = 'http://www.w3.org/2000/svg';

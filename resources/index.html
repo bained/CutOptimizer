@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bg">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,38 +8,38 @@
 </head>
 <body>
 <div id="app">
-<header><h1>CutOptimizer</h1><span class="subtitle">Оптимизация на разкроя на плоскости</span></header>
+<header><h1 data-i18n="app.title">CutOptimizer</h1><span class="subtitle" data-i18n="app.subtitle">Sheet Cutting Optimization</span></header>
 <main id="main-content">
-<div id="loading"><p>Зареждане...</p><div class="spinner"></div></div>
+<div id="loading"><p data-i18n="app.loading">Loading...</p><div class="spinner"></div></div>
 <div id="results-panel" class="hidden">
 <div class="toolbar">
-<button id="btn-run" class="btn-primary" disabled>▶ Стартирай</button>
-<span id="status-text">Готов</span>
-<span id="current-project" class="project-name">Проект: —</span>
-<select id="example-select" class="example-select"><option value="">Избери пример...</option></select>
+<button id="btn-run" class="btn-primary" disabled data-i18n="btn.run">▶ Run</button>
+<span id="status-text" data-i18n="app.ready">Ready</span>
+<span id="current-project" class="project-name">Project: —</span>
+<select id="example-select" class="example-select"><option value="" data-i18n="example.select">Choose example...</option></select>
 </div>
 <div class="tab-bar">
-<button class="tab-btn active" data-tab="settings">⚙ Settings</button>
-<button class="tab-btn" data-tab="data">📋 Data</button>
-<button class="tab-btn" data-tab="results">📊 Results</button>
+<button class="tab-btn active" data-tab="settings" data-i18n="tab.settings">⚙ Settings</button>
+<button class="tab-btn" data-tab="data" data-i18n="tab.data">📋 Data</button>
+<button class="tab-btn" data-tab="results" data-i18n="tab.results">📊 Results</button>
 </div>
 
 <!-- TAB: SETTINGS -->
 <div id="tab-settings" class="tab-content active">
 <div class="settings-panel">
 <div class="settings-row">
-<div class="settings-group"><label for="input-iterations">Iterations</label><input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000"></div>
-<div class="settings-group"><label for="input-beam-width">Beam Width</label><input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100"></div>
-<div class="settings-group"><label for="input-seed">Seed</label><input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646"></div>
+<div class="settings-group"><label for="input-iterations" data-i18n="settings.iterations">Iterations</label><input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000"></div>
+<div class="settings-group"><label for="input-beam-width" data-i18n="settings.beamWidth">Beam Width</label><input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100"></div>
+<div class="settings-group"><label for="input-seed" data-i18n="settings.seed">Seed</label><input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646"></div>
 </div>
 <div class="settings-row">
-<div class="settings-group"><label>Quality Profile</label>
+<div class="settings-group"><label data-i18n="settings.quality">Quality Profile</label>
 <div class="radio-group">
-<label class="radio-label"><input type="radio" name="quality" value="fast"> Fast</label>
-<label class="radio-label"><input type="radio" name="quality" value="balanced" checked> Balanced</label>
-<label class="radio-label"><input type="radio" name="quality" value="precise"> Precise</label>
+<label class="radio-label"><input type="radio" name="quality" value="fast"><span data-i18n="settings.quality.fast">Fast</span></label>
+<label class="radio-label"><input type="radio" name="quality" value="balanced" checked><span data-i18n="settings.quality.balanced">Balanced</span></label>
+<label class="radio-label"><input type="radio" name="quality" value="precise"><span data-i18n="settings.quality.precise">Precise</span></label>
 </div></div>
-<div class="settings-group"><label class="checkbox-label"><input type="checkbox" id="input-randomize"> Randomize</label></div>
+<div class="settings-group"><label class="checkbox-label"><input type="checkbox" id="input-randomize"><span data-i18n="settings.randomize">Randomize</span></label></div>
 </div>
 </div>
 </div>
@@ -47,43 +47,52 @@
 <!-- TAB: DATA -->
 <div id="tab-data" class="tab-content">
 <div class="data-section">
-<div class="data-section-header"><h3>Project</h3>
+<div class="data-section-header"><h3 data-i18n="project.name">Project</h3>
 <div class="btn-row">
-<button id="btn-save-project" class="btn-secondary">💾 Save</button>
-<button id="btn-load-project" class="btn-secondary">📂 Load</button>
-<button id="btn-new-project" class="btn-secondary">✕ New</button>
+<button id="btn-save-project" class="btn-secondary" data-i18n="btn.save">💾 Save</button>
+<button id="btn-load-project" class="btn-secondary" data-i18n="btn.load">📂 Load</button>
+<button id="btn-new-project" class="btn-secondary" data-i18n="btn.new">✕ New</button>
 </div></div>
 </div>
 <div class="data-section">
-<div class="data-section-header"><h3>Sheet</h3>
-<div class="btn-row"><button id="btn-sheet-import" class="btn-secondary">📂 Import</button><button id="btn-sheet-export" class="btn-secondary">💾 Export</button></div></div>
+<div class="data-section-header"><h3 data-i18n="data.sheet">Sheet</h3>
+<div class="btn-row"><button id="btn-sheet-import" class="btn-secondary" data-i18n="btn.import">📂 Import</button><button id="btn-sheet-export" class="btn-secondary" data-i18n="btn.export">💾 Export</button></div></div>
 <div class="sheet-form">
-<div class="settings-group"><label for="input-sheet-w">Width (mm)</label><input type="number" id="input-sheet-w" class="settings-input" value="2440" min="1" max="5000"></div>
-<div class="settings-group"><label for="input-sheet-h">Height (mm)</label><input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000"></div>
-<div class="settings-group"><label for="input-sheet-kerf">Kerf (mm)</label><input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50"></div>
-<div class="settings-group" style="align-self:flex-end;"><button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;">Apply</button></div>
+<div class="settings-group"><label for="input-sheet-w" data-i18n="data.sheet.width">Width (mm)</label><input type="number" id="input-sheet-w" class="settings-input" value="2440" min="1" max="5000"></div>
+<div class="settings-group"><label for="input-sheet-h" data-i18n="data.sheet.height">Height (mm)</label><input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000"></div>
+<div class="settings-group"><label for="input-sheet-kerf" data-i18n="data.sheet.kerf">Kerf (mm)</label><input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50"></div>
+<div class="settings-group" style="align-self:flex-end;"><button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;" data-i18n="btn.apply">Apply</button></div>
 </div></div>
 <div class="data-section">
-<div class="data-section-header"><h3>Parts (<span id="parts-count-label">0</span>)</h3>
-<div class="btn-row"><button id="btn-parts-import" class="btn-secondary">📂 Import</button><button id="btn-parts-export" class="btn-secondary">💾 Export</button></div></div>
+<div class="data-section-header"><h3><span data-i18n="data.parts">Parts</span> (<span id="parts-count-label">0</span>)</h3>
+<div class="btn-row"><button id="btn-parts-import" class="btn-secondary" data-i18n="btn.import">📂 Import</button><button id="btn-parts-export" class="btn-secondary" data-i18n="btn.export">💾 Export</button></div></div>
 <div class="part-add-form">
-<input type="text" id="input-part-name" class="text-input" placeholder="Name">
-<input type="number" id="input-part-w" class="settings-input" placeholder="W" min="1" max="5000">
-<input type="number" id="input-part-h" class="settings-input" placeholder="H" min="1" max="5000">
-<input type="number" id="input-part-qty" class="settings-input" value="1" min="1" max="999">
-<label class="checkbox-label"><input type="checkbox" id="input-part-rotate"> Rot</label>
-<span class="edges-label">Edges:</span>
+<input type="text" id="input-part-name" class="text-input" data-i18n-placeholder="data.parts.add.name" placeholder="Name">
+<input type="number" id="input-part-w" class="settings-input" data-i18n-placeholder="data.parts.add.w" placeholder="W" min="1" max="5000">
+<input type="number" id="input-part-h" class="settings-input" data-i18n-placeholder="data.parts.add.h" placeholder="H" min="1" max="5000">
+<input type="number" id="input-part-qty" class="settings-input" value="1" min="1" max="999" data-i18n-placeholder="data.parts.qty">
+<label class="checkbox-label"><input type="checkbox" id="input-part-rotate"><span data-i18n="data.parts.rotate">Rot</span></label>
+<span class="edges-label" data-i18n="data.parts.edges">Edges:</span>
 <div class="edges-group" id="add-edges-group">
-<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="0"> L1</label>
-<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="1"> L2</label>
-<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="2"> S1</label>
-<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="3"> S2</label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="0"><span data-i18n="data.parts.edge.l1">L1</span></label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="1"><span data-i18n="data.parts.edge.l2">L2</span></label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="2"><span data-i18n="data.parts.edge.s1">S1</span></label>
+<label class="edge-btn"><input type="checkbox" class="edge-cb" data-side="3"><span data-i18n="data.parts.edge.s2">S2</span></label>
 </div>
-<button id="btn-part-add" class="btn-primary" style="padding:6px 16px;font-size:14px;">+ Add</button>
+<button id="btn-part-add" class="btn-primary" style="padding:6px 16px;font-size:14px;" data-i18n="btn.add">+ Add</button>
 </div>
 <div id="parts-table-container">
 <table id="parts-table" class="data-table">
-<thead><tr><th>#</th><th>Name</th><th>W (mm)</th><th>H (mm)</th><th>Qty</th><th>Edges</th><th>Rot</th><th></th></tr></thead>
+<thead><tr>
+<th data-i18n="data.parts.th.num">#</th>
+<th data-i18n="data.parts.th.name">Name</th>
+<th data-i18n="data.parts.th.w">W (mm)</th>
+<th data-i18n="data.parts.th.h">H (mm)</th>
+<th data-i18n="data.parts.th.qty">Qty</th>
+<th data-i18n="data.parts.th.edges">Edges</th>
+<th data-i18n="data.parts.th.rot">Rot</th>
+<th></th>
+</tr></thead>
 <tbody id="parts-table-body"></tbody>
 </table></div></div>
 </div>
@@ -92,27 +101,27 @@
 <div id="tab-results" class="tab-content">
 <div class="results-layout">
 <div class="panel panel-left">
-<h2>Параметри</h2>
-<div class="param-group"><label>Лист (Ш x В):</label><span id="display-sheet-size" class="param-value">-</span></div>
-<div class="param-group"><label>Kerf:</label><span id="display-kerf" class="param-value">-</span></div>
-<div class="param-group"><label>Части:</label><span id="display-parts-count" class="param-value">-</span></div>
+<h2 data-i18n="results.params">Parameters</h2>
+<div class="param-group"><label data-i18n="results.sheet.size">Sheet (W x H):</label><span id="display-sheet-size" class="param-value">-</span></div>
+<div class="param-group"><label data-i18n="results.kerf">Kerf:</label><span id="display-kerf" class="param-value">-</span></div>
+<div class="param-group"><label data-i18n="results.parts">Parts:</label><span id="display-parts-count" class="param-value">-</span></div>
 <hr>
-<h2>Резултат</h2>
-<div class="param-group"><label>Листове:</label><span id="result-sheets" class="param-value highlight">-</span></div>
-<div class="param-group"><label>Ср. ефективност:</label><span id="result-efficiency" class="param-value highlight">-</span></div>
-<div class="param-group"><label>Score:</label><span id="result-score" class="param-value">-</span></div>
-<div class="param-group"><label>Поставени части:</label><span id="result-placed" class="param-value">-</span></div>
+<h2 data-i18n="results.result">Result</h2>
+<div class="param-group"><label data-i18n="results.sheets.used">Sheets used:</label><span id="result-sheets" class="param-value highlight">-</span></div>
+<div class="param-group"><label data-i18n="results.efficiency">Avg Efficiency:</label><span id="result-efficiency" class="param-value highlight">-</span></div>
+<div class="param-group"><label data-i18n="results.score">Score:</label><span id="result-score" class="param-value">-</span></div>
+<div class="param-group"><label data-i18n="results.placed">Placed parts:</label><span id="result-placed" class="param-value">-</span></div>
 </div>
 <div class="panel panel-right">
 <div class="panel-header-row">
-<h2>Визуализация</h2>
+<h2 data-i18n="results.visualization">Visualization</h2>
 <div class="btn-row">
-<button id="btn-zoom-in" class="btn-secondary" title="Zoom In">+</button>
-<button id="btn-zoom-out" class="btn-secondary" title="Zoom Out">−</button>
-<button id="btn-zoom-reset" class="btn-secondary" title="Reset View">↺</button>
-<button id="btn-export-csv" class="btn-secondary" title="Export CSV">📊 CSV</button>
-<button id="btn-export-png" class="btn-secondary" title="Export PNG">🖼 PNG</button>
-<button id="btn-export-pdf" class="btn-secondary" title="Export PDF">📄 PDF</button>
+<button id="btn-zoom-in" class="btn-secondary" title="Zoom In" data-i18n="btn.zoom.in">+</button>
+<button id="btn-zoom-out" class="btn-secondary" title="Zoom Out" data-i18n="btn.zoom.out">−</button>
+<button id="btn-zoom-reset" class="btn-secondary" title="Reset View" data-i18n="btn.zoom.reset">↺</button>
+<button id="btn-export-csv" class="btn-secondary" title="Export CSV" data-i18n="btn.csv">📊 CSV</button>
+<button id="btn-export-png" class="btn-secondary" title="Export PNG" data-i18n="btn.png">🖼 PNG</button>
+<button id="btn-export-pdf" class="btn-secondary" title="Export PDF" data-i18n="btn.pdf">📄 PDF</button>
 </div></div>
 <div id="visualization-container">
 <div id="svg-container"></div>
@@ -133,6 +142,7 @@
 <script src="/js/app/engine/Optimizer.js"></script>
 <script src="/js/app/ConfigManager.js"></script>
 <script src="/js/app/ProjectManager.js"></script>
+<script src="/js/app/i18n.js"></script>
 <script src="/js/app/svgLibrary.js"></script>
 <script src="/js/main.js"></script>
 </body>
