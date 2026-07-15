@@ -155,7 +155,7 @@ class Optimizer {
         var layout = base.copy();
         var s = layout.sheets[sheetIndex];
 
-        var placed = new PlacedPart(part.name, r.x, r.y, pw, ph, rotated);
+        var placed = new PlacedPart(part.name, r.x, r.y, pw, ph, rotated, part.edges);
         s.parts.push(placed);
 
         this.splitRects(s, placed);

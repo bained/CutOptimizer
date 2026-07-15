@@ -11,14 +11,16 @@ class PlacedPart {
      * @param {number} w
      * @param {number} h
      * @param {boolean} rotated
+     * @param {number[]} edges - [L1, L2, S1, S2]
      */
-    constructor(name, x, y, w, h, rotated) {
+    constructor(name, x, y, w, h, rotated, edges) {
         this.name = name;
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
-        this.rotated = rotated;
+        this.rotated = rotated || false;
+        this.edges = (edges && Array.isArray(edges) && edges.length === 4) ? edges.slice() : [0,0,0,0];
     }
 
     calculateArea() {
@@ -26,7 +28,7 @@ class PlacedPart {
     }
 
     copy() {
-        return new PlacedPart(this.name, this.x, this.y, this.w, this.h, this.rotated);
+        return new PlacedPart(this.name, this.x, this.y, this.w, this.h, this.rotated, this.edges);
     }
 }
 

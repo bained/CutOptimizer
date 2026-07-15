@@ -219,66 +219,109 @@ function syncEdgeButtons(groupId) {
 }
 
 function renderSVG(layout) {
-    var c = document.getElementById('svg-container');
-    c.innerHTML = '';
-    if (!layout || !layout.sheets.length) { c.innerHTML = '<p style="color:#5D6D7E;text-align:center;padding:40px;">Няма резултати</p>'; return; }
+    var container = document.getElementById('svg-container');
+    container.innerHTML = '';
+    if (!layout || !layout.sheets.length) { container.innerHTML = '<p style="color:#5D6D7E;text-align:center;padding:40px;">Няма резултати</p>'; return; }
     zoomLevel = 1.0;
+
     var sw = layout.sheets[0].w, sh = layout.sheets[0].h;
     var gap = 80, lh = 30, th = layout.sheets.length * (sh + gap + lh);
-    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + (sw + 40) + ' ' + th + '" preserveAspectRatio="xMidYMid meet" style="background:#E8EBED;">';
-    s += '<style>' +
-        '.p{fill:#2471A3;}.pr{fill:#1E8449;}' +
-        '.l{font-family:sans-serif;font-size:12px;fill:#fff;}.d{font-family:sans-serif;font-size:10px;fill:#fff;opacity:.85;}' +
-        '.sl{font-family:sans-serif;font-size:15px;font-weight:bold;fill:#2C3E50;}' +
-        '.edge{stroke:#E74C3C;stroke-width:4;stroke-linecap:square;}' +
-        '</style>';
+
+    var ns = 'http://www.w3.org/2000/svg';
+    var rootSVG = document.createElementNS(ns, 'svg');
+    rootSVG.setAttribute('xmlns', ns);
+    rootSVG.setAttribute('viewBox', '0 0 ' + (sw + 40) + ' ' + th);
+    rootSVG.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    rootSVG.setAttribute('width', '100%');
+    rootSVG.setAttribute('height', '100%');
+    rootSVG.style.background = '#E8EBED';
+
+    var parser = new DOMParser();
+
     for (var si = 0; si < layout.sheets.length; si++) {
-        var sheet = layout.sheets[si], oy = si * (sh + gap + lh) + lh;
-        s += '<text x="10" y="' + (oy - 10) + '" class="sl">Лист ' + (si + 1) + ' — Ефективност: ' + sheet.efficiency.toFixed(1) + '%</text>';
-        s += '<rect x="0" y="' + oy + '" width="' + sw + '" height="' + sh + '" fill="#F8F9FA" stroke="#1A252F" stroke-width="3"/>';
-        for (var gx = 100; gx < sw; gx += 100) s += '<line x1="' + gx + '" y1="' + oy + '" x2="' + gx + '" y2="' + (oy + sh) + '" stroke="#D5D8DC" stroke-width="0.5"/>';
-        for (var gy = 100; gy < sh; gy += 100) s += '<line x1="0" y1="' + (oy + gy) + '" x2="' + sw + '" y2="' + (oy + gy) + '" stroke="#D5D8DC" stroke-width="0.5"/>';
+        var sheet = layout.sheets[si];
+        var oy = si * (sh + gap + lh) + lh;
+
+        // Sheet label
+        var lbl = document.createElementNS(ns, 'text');
+        lbl.setAttribute('x', 10); lbl.setAttribute('y', oy - 10);
+        lbl.setAttribute('font-family', 'sans-serif'); lbl.setAttribute('font-size', '15');
+        lbl.setAttribute('font-weight', 'bold'); lbl.setAttribute('fill', '#2C3E50');
+        lbl.textContent = 'Лист ' + (si + 1) + ' — Ефективност: ' + sheet.efficiency.toFixed(1) + '%';
+        rootSVG.appendChild(lbl);
+
+        // Sheet outline
+        var sr = document.createElementNS(ns, 'rect');
+        sr.setAttribute('x', 0); sr.setAttribute('y', oy);
+        sr.setAttribute('width', sw); sr.setAttribute('height', sh);
+        sr.setAttribute('fill', '#F8F9FA');
+        sr.setAttribute('stroke', '#1A252F'); sr.setAttribute('stroke-width', 3);
+        rootSVG.appendChild(sr);
+
+        // Grid
+        for (var gx = 100; gx < sw; gx += 100) {
+            var gl = document.createElementNS(ns, 'line');
+            gl.setAttribute('x1', gx); gl.setAttribute('y1', oy);
+            gl.setAttribute('x2', gx); gl.setAttribute('y2', oy + sh);
+            gl.setAttribute('stroke', '#D5D8DC'); gl.setAttribute('stroke-width', 0.5);
+            rootSVG.appendChild(gl);
+        }
+        for (var gy = 100; gy < sh; gy += 100) {
+            var gl2 = document.createElementNS(ns, 'line');
+            gl2.setAttribute('x1', 0); gl2.setAttribute('y1', oy + gy);
+            gl2.setAttribute('x2', sw); gl2.setAttribute('y2', oy + gy);
+            gl2.setAttribute('stroke', '#D5D8DC'); gl2.setAttribute('stroke-width', 0.5);
+            rootSVG.appendChild(gl2);
+        }
+
+        // Parts — използвайки generateRectangleSVG + DOMParser + addDimensions + addLabel
         for (var pi = 0; pi < sheet.parts.length; pi++) {
-            var p = sheet.parts[pi], cls = p.rotated ? 'pr' : 'p';
-            var px = p.x, py = p.y, pw = p.w, ph = p.h;
-            s += '<rect x="' + px + '" y="' + (oy + py) + '" width="' + pw + '" height="' + ph + '" class="' + cls + '" rx="2"/>';
-            s += '<rect x="' + px + '" y="' + (oy + py) + '" width="' + pw + '" height="' + ph + '" fill="none" stroke="#1A252F" stroke-width="1.5" rx="2"/>';
-            // Edge линии за кантиране: p.edges = [L1, L2, S1, S2]
-            // L1/L2 са страните успоредни на по-дългата страна, S1/S2 по-късата
-            var e = p.edges || [0,0,0,0];
-            // Ако ширината >= височината (не-ротиран или w>h):
-            // L1=top, L2=bottom (успоредни на w), S1=right, S2=left (успоредни на h)
-            // Ако ширината < височината (ротиран):
-            // L1=left, L2=right (успоредни на h, което е новата ширина), S1=top, S2=bottom (успоредни на w, новата височина)
-            var isWide = pw >= ph;
-            var l1Side = isWide ? 0 : 3; // top или left
-            var l2Side = isWide ? 2 : 1; // bottom или right
-            var s1Side = isWide ? 1 : 0; // right или top
-            var s2Side = isWide ? 3 : 2; // left или bottom
-            if (e[0]) {
-                if (isWide) s += '<line x1="' + px + '" y1="' + (oy + py) + '" x2="' + (px + pw) + '" y2="' + (oy + py) + '" class="edge"/>'; // L1=top
-                else s += '<line x1="' + px + '" y1="' + (oy + py) + '" x2="' + px + '" y2="' + (oy + py + ph) + '" class="edge"/>'; // L1=left
+            var p = sheet.parts[pi];
+            var edges = p.edges || [0,0,0,0];
+
+            // Принудително преобразуване в числа
+            var L1_val = edges[0] ? 6 : 0;
+            var L2_val = edges[1] ? 6 : 0;
+            var S1_val = edges[2] ? 6 : 0;
+            var S2_val = edges[3] ? 6 : 0;
+
+            console.log('Sending to Lib:', 'w=' + p.w, 'h=' + p.h, 'L1=' + L1_val, 'L2=' + L2_val, 'S1=' + S1_val, 'S2=' + S2_val);
+
+            // 1) generateRectangleSVG -> SVG string
+            var svgStr = generateRectangleSVG({
+                width: Number(p.w),
+                height: Number(p.h),
+                L1: Number(L1_val),
+                L2: Number(L2_val),
+                S1: Number(S1_val),
+                S2: Number(S2_val),
+                sCol: '#000000',
+                fCol: '#FFFFFF'
+            });
+
+            // 2) Parse to SVGElement
+            var doc = parser.parseFromString(svgStr, 'image/svg+xml');
+            var partSVG = doc.documentElement;
+
+            // 3) Wrap in group with translate
+            var g = document.createElementNS(ns, 'g');
+            g.setAttribute('transform', 'translate(' + p.x + ', ' + (oy + p.y) + ')');
+
+            // Move all children from partSVG to g
+            while (partSVG.firstChild) {
+                g.appendChild(partSVG.firstChild);
             }
-            if (e[1]) {
-                if (isWide) s += '<line x1="' + (px + pw) + '" y1="' + (oy + py) + '" x2="' + (px + pw) + '" y2="' + (oy + py + ph) + '" class="edge"/>'; // L2=right
-                else s += '<line x1="' + (px + pw) + '" y1="' + (oy + py) + '" x2="' + (px + pw) + '" y2="' + (oy + py + ph) + '" class="edge"/>'; // L2=right (същото)
-            }
-            if (e[2]) {
-                if (isWide) s += '<line x1="' + px + '" y1="' + (oy + py + ph) + '" x2="' + (px + pw) + '" y2="' + (oy + py + ph) + '" class="edge"/>'; // S1=bottom
-                else s += '<line x1="' + px + '" y1="' + (oy + py) + '" x2="' + (px + pw) + '" y2="' + (oy + py) + '" class="edge"/>'; // S1=top
-            }
-            if (e[3]) {
-                if (isWide) s += '<line x1="' + px + '" y1="' + (oy + py) + '" x2="' + px + '" y2="' + (oy + py + ph) + '" class="edge"/>'; // S2=left
-                else s += '<line x1="' + px + '" y1="' + (oy + py + ph) + '" x2="' + (px + pw) + '" y2="' + (oy + py + ph) + '" class="edge"/>'; // S2=bottom
-            }
-            if (pw > 50 && ph > 20) {
-                s += '<text x="' + (px + 4) + '" y="' + (oy + py + 15) + '" class="l">' + escapeHtml(p.name) + (p.rotated ? ' [R]' : '') + '</text>';
-                s += '<text x="' + (px + 4) + '" y="' + (oy + py + 28) + '" class="d">' + pw + 'x' + ph + '</text>';
-            }
+
+            // 4) addDimensions + addLabel
+            addDimensions(g, Number(p.w), Number(p.h), Number(L1_val), Number(L2_val), Number(S1_val), Number(S2_val), '#333333');
+            addLabel(g, p.name, Number(p.w), Number(p.h));
+
+            rootSVG.appendChild(g);
         }
     }
-    s += '</svg>';
-    c.innerHTML = s;
+
+    container.appendChild(rootSVG);
+    console.log('SVG rendered: ' + layout.sheets.length + ' sheets, ' + container.querySelectorAll('line').length + ' lines');
     applyZoom();
 }
 
