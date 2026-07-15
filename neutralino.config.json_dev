@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/neutralinojs/neutralinojs/main/schemas/neutralino.config.schema.json",
   "applicationId": "com.cutoptimizer.app",
-  "version": "0.5.0",
+  "version": "0.2.0",
   "defaultMode": "window",
   "port": 0,
   "documentRoot": "/resources/",
@@ -10,8 +10,8 @@
   "enableNativeAPI": true,
   "tokenSecurity": "one-time",
   "logging": {
-    "enabled": false,
-    "writeToLogFile": false
+    "enabled": true,
+    "writeToLogFile": true
   },
   "nativeAllowList": [
     "app.*",
@@ -30,7 +30,7 @@
       "fullScreen": false,
       "alwaysOnTop": false,
       "icon": "/resources/icons/appIcon.png",
-      "enableInspector": false,
+      "enableInspector": true,
       "borderless": false,
       "maximize": false,
       "hidden": false,
