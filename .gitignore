@@ -5,9 +5,8 @@ node_modules/
 .DS_Store
 resources.neu
 .tmp/
-d_port/
+d_lang/
 neutralino.config.json_dev
 cutoptimizer-temp/
 lang/
 bin/
-app/
