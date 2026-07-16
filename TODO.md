@@ -1,5 +1,13 @@
 # TODO
 
+## Completed (v0.5.1)
+- [x] Remove ConfigManager and config.ini (dead code from D port)
+- [x] Remove configPath from ProjectManager constructor
+- [x] Remove config.ini from dist_build.bat
+- [x] Version bump to 0.5.1
+- [x] Rename exe from CutOptimizer-win_x64.exe to CutOptimizer.exe
+- [x] Embedded translations directly in i18n.js (no runtime file dependencies)
+
 ## Completed (v0.5.0)
 - [x] Initial project structure and documentation
 - [x] Beam Search V6 engine port from D
@@ -30,6 +38,7 @@
 - [ ] **Language switcher** — dropdown in UI to change language without restart
 - [ ] **Undo/Redo** — history of CRUD operations
 - [ ] **Keyboard shortcuts** — Ctrl+Z, Ctrl+S, Delete, etc.
+- [ ] **Cross-platform emoji** — replace emoji icons with text labels for Linux/WSL compatibility
 
 ### Optimization Engine
 - [ ] **Multi-material support** — different sheets with different materials

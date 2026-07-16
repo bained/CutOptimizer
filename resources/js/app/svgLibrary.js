@@ -67,7 +67,7 @@ function addDimensions(svgElement, width, height, L1, L2, S1, S2, color) {
 
     var ns = 'http://www.w3.org/2000/svg';
 
-    var widthOff = top / 2 + 4;
+    var widthOff = top / 2 + 7;
     var wText = document.createElementNS(ns, 'text');
     wText.setAttribute('font-family', 'sans-serif');
     wText.setAttribute('font-size', widthFontSize);
@@ -79,7 +79,7 @@ function addDimensions(svgElement, width, height, L1, L2, S1, S2, color) {
     wText.textContent = '' + width;
     svgElement.appendChild(wText);
 
-    var cx = (left / 2) + left / 2 + 6;
+    var cx = (left / 2) + left / 2 + 12;
     var cy = height / 2;
     var hText = document.createElementNS(ns, 'text');
     hText.setAttribute('font-family', 'sans-serif');

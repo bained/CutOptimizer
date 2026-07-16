@@ -3,3 +3,11 @@ node_modules/
 .neutralino/
 *.log
 .DS_Store
+resources.neu
+.tmp/
+d_port/
+neutralino.config.json_dev
+cutoptimizer-temp/
+lang/
+bin/
+app/

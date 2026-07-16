@@ -48,7 +48,7 @@ async function initApp() {
 
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('results-panel').classList.remove('hidden');
-        projectManager = new ProjectManager(getBasePath() + '/config.ini');
+        projectManager = new ProjectManager();
         var loaded = await tryLoadLastProject();
         if (!loaded) {
             try {

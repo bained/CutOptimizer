@@ -5,11 +5,7 @@
  * Действа като централен Store за всички данни.
  */
 class ProjectManager {
-    /**
-     * @param {string} configPath
-     */
-    constructor(configPath) {
-        this.config = new ConfigManager(configPath);
+    constructor() {
         this.optimizer = null;
         this.parts = [];
         this.sheetW = 2440;
@@ -204,8 +200,6 @@ class ProjectManager {
             this.result = null;
 
             this.optimizer = new Optimizer(this.sheetW, this.sheetH, this.kerf);
-
-            await this.config.load();
 
             return {
                 sheetW: this.sheetW,
