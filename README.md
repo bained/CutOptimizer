@@ -21,12 +21,17 @@ Built with [Neutralino.js](https://neutralino.js.org/) and a custom SVG renderin
 ## Quick Start
 
 ```bash
+neu update
 # Build the application
 neu build
 
 # Copy runtime files (examples)
 .\dist_build.bat
 
+# Run dev version
+neu run
+
+# or
 # Run standalone
 dist\CutOptimizer\CutOptimizer.exe --path=.
 ```
