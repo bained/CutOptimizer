@@ -69,6 +69,10 @@ class Optimizer {
             rejectedCandidates: 0,
             generatedCandidates: 0,
             layoutCopies: 0,
+            copyTimeMs: 0,
+            candidateTimeMs: 0,
+            beamTimeMs: 0,
+            optimizeTimeMs: 0,
             splitCalls: 0,
             cleanCalls: 0,
             sortCalls: 0,
@@ -88,6 +92,16 @@ class Optimizer {
     now() {
         return (typeof performance !== 'undefined' && performance.now)
             ? performance.now() : Date.now();
+    }
+
+    copyLayout(layout) {
+        var start = this.instrumentationEnabled ? this.now() : 0;
+        var copy = layout.copy();
+        if (this.instrumentationEnabled) {
+            this.stats.layoutCopies++;
+            this.stats.copyTimeMs += this.now() - start;
+        }
+        return copy;
     }
 
     /**
@@ -192,6 +206,7 @@ class Optimizer {
     }
 
     tryCandidate(outLayouts, base, part, sheetIndex, rectIndex, rotated) {
+        var candidateStart = this.instrumentationEnabled ? this.now() : 0;
         if (this.instrumentationEnabled) this.stats.candidateAttempts++;
         var r = base.sheets[sheetIndex].freeRects[rectIndex];
         var pw = rotated ? part.h : part.w;
@@ -202,8 +217,7 @@ class Optimizer {
             return;
         }
 
-        var layout = base.copy();
-        if (this.instrumentationEnabled) this.stats.layoutCopies++;
+        var layout = this.copyLayout(base);
         var s = layout.sheets[sheetIndex];
 
         var placed = new PlacedPart(part.name, r.x, r.y, pw, ph, rotated, part.edges);
@@ -222,6 +236,7 @@ class Optimizer {
         layout.score = this.evaluate(layout.sheets) - gravityPenalty;
         outLayouts.push(layout);
         if (this.instrumentationEnabled) this.stats.generatedCandidates++;
+        if (this.instrumentationEnabled) this.stats.candidateTimeMs += this.now() - candidateStart;
     }
 
     /**
@@ -234,6 +249,7 @@ class Optimizer {
      * @returns {Layout}
      */
     beamSearch(parts, beamWidth, totalIterations, currentIteration, onProgress) {
+        var beamStart = this.instrumentationEnabled ? this.now() : 0;
         if (this.instrumentationEnabled) this.stats.beamSearches++;
         var beam = [];
 
@@ -257,8 +273,7 @@ class Optimizer {
                     }
                 }
 
-                var newSheetLayout = layout.copy();
-                if (this.instrumentationEnabled) this.stats.layoutCopies++;
+                var newSheetLayout = this.copyLayout(layout);
                 newSheetLayout.sheets.push(this.createSheet());
                 var newSheetIndex = newSheetLayout.sheets.length - 1;
                 this.tryCandidate(nextCandidates, newSheetLayout, p, newSheetIndex, 0, false);
@@ -281,6 +296,7 @@ class Optimizer {
             onProgress(currentIteration + 1, totalIterations);
         }
 
+        if (this.instrumentationEnabled) this.stats.beamTimeMs += this.now() - beamStart;
         return beam[0];
     }
 
@@ -295,6 +311,7 @@ class Optimizer {
      * @returns {Promise<Layout>}
      */
     async optimize(parts, iterations, beamWidth, randomize, onProgress) {
+        var optimizeStart = this.instrumentationEnabled ? this.now() : 0;
         // Проверка за валидност на входните данни
         if (!parts || !Array.isArray(parts) || parts.length === 0) {
             console.error('Optimizer: No parts provided! parts=' + JSON.stringify(parts));
@@ -309,7 +326,9 @@ class Optimizer {
         for (var it = 0; it < iterations; it++) {
             if (this.instrumentationEnabled) this.stats.iterations++;
             // Позволяваме на UI да се опресни между итерациите
-            await new Promise(function(resolve) { setTimeout(resolve, 0); });
+            if (this.yieldBetweenIterations !== false) {
+                await new Promise(function(resolve) { setTimeout(resolve, 0); });
+            }
             if (randomize) {
                 this.setSeed(Math.floor(Math.random() * 2147483646) + 1);
             } else {
@@ -349,6 +368,7 @@ class Optimizer {
             }
         }
 
+        if (this.instrumentationEnabled) this.stats.optimizeTimeMs += this.now() - optimizeStart;
         return best;
     }
 }

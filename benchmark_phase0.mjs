@@ -116,9 +116,11 @@ async function run() {
     const warmups = Number.parseInt(process.env.CUTOPT_WARMUPS || '2', 10);
     const repeats = Number.parseInt(process.env.CUTOPT_REPEATS || '5', 10);
     const instrument = process.env.CUTOPT_INSTRUMENT === '1';
+    const noYield = process.env.CUTOPT_NO_YIELD === '1';
 
     const makeOptimizer = () => {
         const optimizer = new Optimizer(sheetW, sheetH, kerf);
+        optimizer.yieldBetweenIterations = !noYield;
         if (instrument) optimizer.enableInstrumentation(true);
         return optimizer;
     };
@@ -134,6 +136,7 @@ async function run() {
         const elapsedMs = performance.now() - start;
         validateLayout(layout, parts.length, sheetW, sheetH, kerf);
         const summary = summarize(layout, elapsedMs, parts.length);
+        summary.memory = process.memoryUsage();
         if (instrument) summary.instrumentation = optimizer.getInstrumentation();
         runs.push(summary);
     }
@@ -150,12 +153,14 @@ async function run() {
         beamWidth,
         randomize: false,
         instrumentation: instrument,
+        yieldBetweenIterations: !noYield,
         warmups,
         repeats,
         runtimeEngine: 'javascript/resources/js/app/engine/Optimizer.js',
         runtimeEngineSha256: sha256(path.join(runtimeRoot, 'engine', 'Optimizer.js')),
         runs,
-        medianMs
+        medianMs,
+        p95Ms: sortedTimes[Math.min(sortedTimes.length - 1, Math.ceil(sortedTimes.length * 0.95) - 1)]
     };
 
     console.log(JSON.stringify(result, null, 2));
