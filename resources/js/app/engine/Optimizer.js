@@ -223,18 +223,13 @@ class Optimizer {
         var placed = new PlacedPart(part.name, r.x, r.y, pw, ph, rotated, part.edges);
         s.parts.push(placed);
         s.usedArea += pw * ph;
+        s.gravityPenalty += (r.x + r.y) * 0.005;
 
         this.splitRects(s, placed);
         this.cleanRects(s);
         this.finalize(s);
 
-        var gravityPenalty = 0;
-        for (var i = 0; i < s.parts.length; i++) {
-            var p = s.parts[i];
-            gravityPenalty += (p.x + p.y) * 0.005;
-        }
-
-        layout.score = this.evaluate(layout.sheets) - gravityPenalty;
+        layout.score = this.evaluate(layout.sheets) - s.gravityPenalty;
         outLayouts.push(layout);
         if (this.instrumentationEnabled) this.stats.generatedCandidates++;
         if (this.instrumentationEnabled) this.stats.candidateTimeMs += this.now() - candidateStart;

@@ -46,6 +46,7 @@ class Sheet {
         this.freeRects = [new Rect(0, 0, w, h)];
         this.parts = [];
         this.usedArea = 0;
+        this.gravityPenalty = 0;
         this.efficiency = 0.0;
     }
 
@@ -74,6 +75,7 @@ class Sheet {
             copy.parts.push(this.parts[i].copy());
         }
         copy.usedArea = this.usedArea;
+        copy.gravityPenalty = this.gravityPenalty;
         copy.efficiency = this.efficiency;
         return copy;
     }
