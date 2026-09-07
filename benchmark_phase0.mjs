@@ -115,8 +115,13 @@ async function run() {
     const beamWidth = Number.parseInt(process.env.CUTOPT_BEAM_WIDTH || '12', 10);
     const warmups = Number.parseInt(process.env.CUTOPT_WARMUPS || '2', 10);
     const repeats = Number.parseInt(process.env.CUTOPT_REPEATS || '5', 10);
+    const instrument = process.env.CUTOPT_INSTRUMENT === '1';
 
-    const makeOptimizer = () => new Optimizer(sheetW, sheetH, kerf);
+    const makeOptimizer = () => {
+        const optimizer = new Optimizer(sheetW, sheetH, kerf);
+        if (instrument) optimizer.enableInstrumentation(true);
+        return optimizer;
+    };
     for (let i = 0; i < warmups; i++) {
         await makeOptimizer().optimize(parts, iterations, beamWidth, false);
     }
@@ -128,7 +133,9 @@ async function run() {
         const layout = await optimizer.optimize(parts, iterations, beamWidth, false);
         const elapsedMs = performance.now() - start;
         validateLayout(layout, parts.length, sheetW, sheetH, kerf);
-        runs.push(summarize(layout, elapsedMs, parts.length));
+        const summary = summarize(layout, elapsedMs, parts.length);
+        if (instrument) summary.instrumentation = optimizer.getInstrumentation();
+        runs.push(summary);
     }
 
     const sortedTimes = runs.map(run => run.elapsedMs).sort((a, b) => a - b);
@@ -142,6 +149,7 @@ async function run() {
         iterations,
         beamWidth,
         randomize: false,
+        instrumentation: instrument,
         warmups,
         repeats,
         runtimeEngine: 'javascript/resources/js/app/engine/Optimizer.js',

@@ -56,6 +56,38 @@ class Optimizer {
         this.sheetH = sheetH;
         this.kerf = kerf;
         this.rng = new SeededRandom(42);
+        this.instrumentationEnabled = false;
+        this.stats = null;
+    }
+
+    enableInstrumentation(enabled) {
+        this.instrumentationEnabled = !!enabled;
+        this.stats = this.instrumentationEnabled ? {
+            iterations: 0,
+            beamSearches: 0,
+            candidateAttempts: 0,
+            rejectedCandidates: 0,
+            generatedCandidates: 0,
+            layoutCopies: 0,
+            splitCalls: 0,
+            cleanCalls: 0,
+            sortCalls: 0,
+            splitTimeMs: 0,
+            cleanTimeMs: 0,
+            sortTimeMs: 0,
+            freeRectsProcessed: 0,
+            freeRectsAfterSplit: 0,
+            maxFreeRects: 0
+        } : null;
+    }
+
+    getInstrumentation() {
+        return this.stats ? Object.assign({}, this.stats) : null;
+    }
+
+    now() {
+        return (typeof performance !== 'undefined' && performance.now)
+            ? performance.now() : Date.now();
     }
 
     /**
@@ -71,6 +103,11 @@ class Optimizer {
     }
 
     splitRects(sheet, placed) {
+        var start = this.instrumentationEnabled ? this.now() : 0;
+        if (this.instrumentationEnabled) {
+            this.stats.splitCalls++;
+            this.stats.freeRectsProcessed += sheet.freeRects.length;
+        }
         var pw = placed.w + this.kerf;
         var ph = placed.h + this.kerf;
         var next = [];
@@ -100,10 +137,18 @@ class Optimizer {
         }
 
         sheet.freeRects = next;
+        if (this.instrumentationEnabled) {
+            this.stats.splitTimeMs += this.now() - start;
+            this.stats.freeRectsAfterSplit += next.length;
+            if (next.length > this.stats.maxFreeRects) this.stats.maxFreeRects = next.length;
+        }
     }
 
     cleanRects(sheet) {
         if (sheet.freeRects.length < 2) return;
+
+        var start = this.instrumentationEnabled ? this.now() : 0;
+        if (this.instrumentationEnabled) this.stats.cleanCalls++;
 
         var result = [];
         for (var i = 0; i < sheet.freeRects.length; i++) {
@@ -128,6 +173,7 @@ class Optimizer {
         }
 
         sheet.freeRects = result;
+        if (this.instrumentationEnabled) this.stats.cleanTimeMs += this.now() - start;
     }
 
     finalize(sheet) {
@@ -146,13 +192,18 @@ class Optimizer {
     }
 
     tryCandidate(outLayouts, base, part, sheetIndex, rectIndex, rotated) {
+        if (this.instrumentationEnabled) this.stats.candidateAttempts++;
         var r = base.sheets[sheetIndex].freeRects[rectIndex];
         var pw = rotated ? part.h : part.w;
         var ph = rotated ? part.w : part.h;
 
-        if (pw > r.w || ph > r.h) return;
+        if (pw > r.w || ph > r.h) {
+            if (this.instrumentationEnabled) this.stats.rejectedCandidates++;
+            return;
+        }
 
         var layout = base.copy();
+        if (this.instrumentationEnabled) this.stats.layoutCopies++;
         var s = layout.sheets[sheetIndex];
 
         var placed = new PlacedPart(part.name, r.x, r.y, pw, ph, rotated, part.edges);
@@ -170,6 +221,7 @@ class Optimizer {
 
         layout.score = this.evaluate(layout.sheets) - gravityPenalty;
         outLayouts.push(layout);
+        if (this.instrumentationEnabled) this.stats.generatedCandidates++;
     }
 
     /**
@@ -182,6 +234,7 @@ class Optimizer {
      * @returns {Layout}
      */
     beamSearch(parts, beamWidth, totalIterations, currentIteration, onProgress) {
+        if (this.instrumentationEnabled) this.stats.beamSearches++;
         var beam = [];
 
         var initial = new Layout();
@@ -205,6 +258,7 @@ class Optimizer {
                 }
 
                 var newSheetLayout = layout.copy();
+                if (this.instrumentationEnabled) this.stats.layoutCopies++;
                 newSheetLayout.sheets.push(this.createSheet());
                 var newSheetIndex = newSheetLayout.sheets.length - 1;
                 this.tryCandidate(nextCandidates, newSheetLayout, p, newSheetIndex, 0, false);
@@ -213,7 +267,12 @@ class Optimizer {
                 }
             }
 
+            var sortStart = this.instrumentationEnabled ? this.now() : 0;
             nextCandidates.sort(function(a, b) { return b.score - a.score; });
+            if (this.instrumentationEnabled) {
+                this.stats.sortCalls++;
+                this.stats.sortTimeMs += this.now() - sortStart;
+            }
             beam = nextCandidates.slice(0, Math.min(beamWidth, nextCandidates.length));
         }
 
@@ -248,6 +307,7 @@ class Optimizer {
         var best = null;
 
         for (var it = 0; it < iterations; it++) {
+            if (this.instrumentationEnabled) this.stats.iterations++;
             // Позволяваме на UI да се опресни между итерациите
             await new Promise(function(resolve) { setTimeout(resolve, 0); });
             if (randomize) {
