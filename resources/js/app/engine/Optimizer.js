@@ -199,7 +199,7 @@ class Optimizer {
         var totalEff = 0;
 
         for (var i = 0; i < sheetCount; i++) {
-            totalEff += Math.pow(sheets[i].efficiency, 2);
+            totalEff += sheets[i].efficiency * sheets[i].efficiency;
         }
 
         return (10000000.0 / sheetCount) + totalEff;
