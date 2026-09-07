@@ -1,0 +1,7 @@
+{
+  "name": "cutoptimizer",
+  "version": "0.1.0",
+  "description": "Cut Optimization desktop app (Neutralino.js port from D)",
+  "type": "module",
+  "private": true
+}
