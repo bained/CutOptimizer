@@ -222,6 +222,7 @@ class Optimizer {
 
         var placed = new PlacedPart(part.name, r.x, r.y, pw, ph, rotated, part.edges);
         s.parts.push(placed);
+        s.usedArea += pw * ph;
 
         this.splitRects(s, placed);
         this.cleanRects(s);

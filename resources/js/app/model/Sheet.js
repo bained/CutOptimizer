@@ -45,6 +45,7 @@ class Sheet {
         this.h = h;
         this.freeRects = [new Rect(0, 0, w, h)];
         this.parts = [];
+        this.usedArea = 0;
         this.efficiency = 0.0;
     }
 
@@ -53,11 +54,7 @@ class Sheet {
     }
 
     calculateUsedArea() {
-        let used = 0;
-        for (let i = 0; i < this.parts.length; i++) {
-            used += this.parts[i].calculateArea();
-        }
-        return used;
+        return this.usedArea;
     }
 
     calculateEfficiency() {
@@ -76,6 +73,7 @@ class Sheet {
         for (let i = 0; i < this.parts.length; i++) {
             copy.parts.push(this.parts[i].copy());
         }
+        copy.usedArea = this.usedArea;
         copy.efficiency = this.efficiency;
         return copy;
     }

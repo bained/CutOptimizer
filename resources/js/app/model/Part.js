@@ -22,6 +22,7 @@ class Part {
         this.name = name || '';
         this.w = w || 0;
         this.h = h || 0;
+        this.area = this.w * this.h;
         this.canRotate = canRotate || false;
         this.qty = (qty !== undefined) ? qty : 1;
         // Поддържаме legacy число (0-4) и масив [L1, L2, S1, S2]
@@ -35,7 +36,7 @@ class Part {
     }
 
     calculateArea() {
-        return this.w * this.h;
+        return this.area;
     }
 
     getTotalEdges() {
