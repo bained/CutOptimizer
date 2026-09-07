@@ -58,6 +58,7 @@ class Optimizer {
         this.rng = new SeededRandom(42);
         this.instrumentationEnabled = false;
         this.stats = null;
+        this.diagnosticLogging = false;
     }
 
     enableInstrumentation(enabled) {
@@ -314,8 +315,10 @@ class Optimizer {
             return new Layout();
         }
 
-        console.log('Optimizer.optimize: parts=' + parts.length + ', iterations=' + iterations +
-            ', beamWidth=' + beamWidth + ', randomize=' + randomize);
+        if (this.diagnosticLogging) {
+            console.log('Optimizer.optimize: parts=' + parts.length + ', iterations=' + iterations +
+                ', beamWidth=' + beamWidth + ', randomize=' + randomize);
+        }
 
         var best = null;
 
@@ -332,14 +335,11 @@ class Optimizer {
                 this.setSeed(42 + it);
             }
 
-            var workingParts = [];
-            for (var i = 0; i < parts.length; i++) {
-                workingParts.push(parts[i].copy());
-            }
+            var workingParts = parts.slice();
 
             if (it % 3 === 0) {
                 workingParts.sort(function(a, b) {
-                    return b.calculateArea() - a.calculateArea();
+                    return b.area - a.area;
                 });
             } else if (it % 3 === 1) {
                 workingParts.sort(function(a, b) {
