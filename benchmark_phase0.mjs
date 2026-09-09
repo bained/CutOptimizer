@@ -117,10 +117,18 @@ async function run() {
     const repeats = Number.parseInt(process.env.CUTOPT_REPEATS || '5', 10);
     const instrument = process.env.CUTOPT_INSTRUMENT === '1';
     const noYield = process.env.CUTOPT_NO_YIELD === '1';
+    const parentDelta = process.env.CUTOPT_PARENT_DELTA !== '0';
+    const incrementalCleanup = process.env.CUTOPT_INCREMENTAL_CLEANUP === '1';
+    const topKSelection = process.env.CUTOPT_TOP_K === '1';
+    const batchSize = Number.parseInt(process.env.CUTOPT_BATCH_SIZE || '1', 10);
 
     const makeOptimizer = () => {
         const optimizer = new Optimizer(sheetW, sheetH, kerf);
         optimizer.yieldBetweenIterations = !noYield;
+        optimizer.parentDeltaCandidates = parentDelta;
+        optimizer.incrementalCleanup = incrementalCleanup;
+        optimizer.topKSelection = topKSelection;
+        optimizer.batchSize = batchSize;
         if (instrument) optimizer.enableInstrumentation(true);
         return optimizer;
     };
@@ -154,6 +162,10 @@ async function run() {
         randomize: false,
         instrumentation: instrument,
         yieldBetweenIterations: !noYield,
+        parentDeltaCandidates: parentDelta,
+        incrementalCleanup,
+        topKSelection,
+        batchSize,
         warmups,
         repeats,
         runtimeEngine: 'javascript/resources/js/app/engine/Optimizer.js',

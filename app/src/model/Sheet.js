@@ -54,7 +54,13 @@ class Sheet {
         this.w = w;
         this.h = h;
         this.freeRects = [new Rect(0, 0, w, h)];
+        this.freeRectNewFlags = [false];
         this.parts = [];
+        this.splitRectBuffers = [[], []];
+        this.splitRectNewFlags = [[], []];
+        this.splitRectBufferIndex = 0;
+        this.cleanRectBuffer = [];
+        this.cleanRectFlags = [];
         this.efficiency = 0.0;
     }
 
@@ -94,14 +100,16 @@ class Sheet {
      */
     copy() {
         const copy = new Sheet(this.w, this.h);
-        copy.freeRects = [];
+        copy.freeRects = new Array(this.freeRects.length);
         for (let i = 0; i < this.freeRects.length; i++) {
-            copy.freeRects.push(this.freeRects[i].copy());
+            copy.freeRects[i] = this.freeRects[i].copy();
         }
-        copy.parts = [];
+        copy.freeRectNewFlags = this.freeRectNewFlags.slice();
+        copy.parts = new Array(this.parts.length);
         for (let i = 0; i < this.parts.length; i++) {
-            copy.parts.push(this.parts[i].copy());
+            copy.parts[i] = this.parts[i].copy();
         }
+        // Scratch buffer-ите са временни и остават локални за копието.
         copy.efficiency = this.efficiency;
         return copy;
     }
