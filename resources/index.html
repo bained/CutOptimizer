@@ -27,10 +27,10 @@
 <!-- TAB: SETTINGS -->
 <div id="tab-settings" class="tab-content active">
 <div class="settings-panel">
+<div class="settings-help-row"><span data-i18n="settings.help.hint">Optimization settings</span><button id="btn-settings-help" class="help-icon" type="button" aria-haspopup="dialog" aria-controls="settings-help-modal" data-i18n-aria-label="settings.help.open" title="Help">?</button></div>
 <div class="settings-row">
 <div class="settings-group"><label for="input-iterations" data-i18n="settings.iterations">Iterations</label><input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000"></div>
 <div class="settings-group"><label for="input-beam-width" data-i18n="settings.beamWidth">Beam Width</label><input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100"></div>
-<div class="settings-group"><label for="input-seed" data-i18n="settings.seed">Seed</label><input type="number" id="input-seed" class="settings-input" value="42" min="1" max="2147483646"></div>
 </div>
 <div class="settings-row">
 <div class="settings-group"><label data-i18n="settings.quality">Quality Profile</label>
@@ -40,6 +40,19 @@
 <label class="radio-label"><input type="radio" name="quality" value="precise"><span data-i18n="settings.quality.precise">Precise</span></label>
 </div></div>
 <div class="settings-group"><label class="checkbox-label"><input type="checkbox" id="input-randomize"><span data-i18n="settings.randomize">Randomize</span></label></div>
+</div>
+</div>
+</div>
+
+<div id="settings-help-modal" class="help-modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-help-title">
+<div class="help-modal-backdrop" data-help-close="true"></div>
+<div class="help-modal-card" role="document">
+<div class="help-modal-header"><h2 id="settings-help-title" data-i18n="settings.help.title">Optimization settings help</h2><button id="btn-settings-help-close" class="help-modal-close" type="button" aria-label="Close" data-i18n-aria-label="settings.help.close">×</button></div>
+<div class="help-modal-body">
+<section><h3 data-i18n="settings.help.iterations.title">Iterations</h3><p data-i18n="settings.help.iterations.body">Number of independent optimization attempts.</p><p data-i18n="settings.help.iterations.effect">Higher values can improve the result, but take longer. Lower values finish faster, but may miss better layouts.</p></section>
+<section><h3 data-i18n="settings.help.beam.title">Beam Width</h3><p data-i18n="settings.help.beam.body">Number of best partial layouts kept at each search step.</p><p data-i18n="settings.help.beam.effect">Higher values explore more alternatives and can improve quality, but use more time and memory. Lower values are faster, but search more narrowly.</p></section>
+<section><h3 data-i18n="settings.help.randomize.title">Randomize</h3><p data-i18n="settings.help.randomize.body">When enabled, the optimizer explores different randomized search paths while building candidate layouts.</p><p data-i18n="settings.help.randomize.effect">Enable it to try more varied arrangements. This can find a different result, but repeated runs may not be reproducible and may take a similar amount of time. Disable it for stable, repeatable results.</p></section>
+<p class="help-modal-note" data-i18n="settings.help.note">Tip: start with the Balanced profile. Increase Iterations first when you want to spend more time searching; increase Beam Width when you want to keep more alternatives.</p>
 </div>
 </div>
 </div>
@@ -119,6 +132,9 @@
 <button id="btn-zoom-in" class="btn-secondary" title="Zoom In" data-i18n="btn.zoom.in">+</button>
 <button id="btn-zoom-out" class="btn-secondary" title="Zoom Out" data-i18n="btn.zoom.out">−</button>
 <button id="btn-zoom-reset" class="btn-secondary" title="Reset View" data-i18n="btn.zoom.reset">↺</button>
+<button id="btn-sheet-prev" class="btn-secondary" title="Previous sheet" data-i18n="btn.sheet.prev">‹</button>
+<span id="sheet-indicator" class="sheet-indicator" data-i18n="results.sheet.indicator">Sheet 0 of 0</span>
+<button id="btn-sheet-next" class="btn-secondary" title="Next sheet" data-i18n="btn.sheet.next">›</button>
 <button id="btn-export-csv" class="btn-secondary" title="Export CSV" data-i18n="btn.csv">📊 CSV</button>
 <button id="btn-export-png" class="btn-secondary" title="Export PNG" data-i18n="btn.png">🖼 PNG</button>
 <button id="btn-export-pdf" class="btn-secondary" title="Export PDF" data-i18n="btn.pdf">📄 PDF</button>

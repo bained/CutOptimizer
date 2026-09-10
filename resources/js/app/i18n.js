@@ -30,6 +30,8 @@ class I18n {
                 "btn.zoom.in": "+",
                 "btn.zoom.out": "−",
                 "btn.zoom.reset": "↺",
+                "btn.sheet.prev": "‹",
+                "btn.sheet.next": "›",
                 "project.name": "Project",
                 "project.status": "Project loaded",
                 "tab.settings": "⚙ Settings",
@@ -37,12 +39,25 @@ class I18n {
                 "tab.results": "📊 Results",
                 "settings.iterations": "Iterations",
                 "settings.beamWidth": "Beam Width",
-                "settings.seed": "Seed",
                 "settings.quality": "Quality Profile",
                 "settings.quality.fast": "Fast",
                 "settings.quality.balanced": "Balanced",
                 "settings.quality.precise": "Precise",
                 "settings.randomize": "Randomize",
+                "settings.help.hint": "Optimization settings",
+                "settings.help.open": "Open optimization settings help",
+                "settings.help.close": "Close help",
+                "settings.help.title": "Optimization settings help",
+                "settings.help.iterations.title": "Iterations",
+                "settings.help.iterations.body": "Number of independent optimization attempts.",
+                "settings.help.iterations.effect": "Higher values can improve the result, but take longer. Lower values finish faster, but may miss better layouts.",
+                "settings.help.beam.title": "Beam Width",
+                "settings.help.beam.body": "Number of best partial layouts kept at each search step.",
+                "settings.help.beam.effect": "Higher values explore more alternatives and can improve quality, but use more time and memory. Lower values are faster, but search more narrowly.",
+                "settings.help.randomize.title": "Randomize",
+                "settings.help.randomize.body": "When enabled, the optimizer explores different randomized search paths while building candidate layouts.",
+                "settings.help.randomize.effect": "Enable it to try more varied arrangements. This can find a different result, but repeated runs may not be reproducible and may take a similar amount of time. Disable it for stable, repeatable results.",
+                "settings.help.note": "Tip: start with the Balanced profile. Increase Iterations first when you want to spend more time searching; increase Beam Width when you want to keep more alternatives.",
                 "data.sheet": "Sheet",
                 "data.sheet.width": "Width (mm)",
                 "data.sheet.height": "Height (mm)",
@@ -77,6 +92,7 @@ class I18n {
                 "results.visualization": "Visualization",
                 "results.noResults": "No results",
                 "results.sheet.label": "Sheet",
+                "results.sheet.indicator": "Sheet {current} of {total}",
                 "results.legend": "Black line = Edge",
                 "optimization.running": "Optimizing...",
                 "optimization.done": "Done in",
@@ -86,6 +102,8 @@ class I18n {
                 "export.pdf.sheet": "Sheet",
                 "export.pdf.kerf": "Kerf",
                 "export.pdf.edges": "Edges (L1,L2,S1,S2)",
+                "export.pdf.efficiency": "Efficiency",
+                "export.pdf.parts": "Parts",
                 "export.pdf.yes": "Yes",
                 "export.pdf.no": "No",
                 "example.select": "Choose example...",
@@ -107,7 +125,9 @@ class I18n {
                 "messages.projectLoaded": "Loaded:",
                 "messages.projectCreated": "New project created",
                 "messages.csvExported": "CSV exported",
+                "messages.pdfExported": "PDF with all sheets ready to print",
                 "messages.pngExported": "PNG exported",
+                "messages.pngExportedCount": "{count} PNG files exported",
                 "messages.loaded": "Loaded:"
             },
             'bg': {
@@ -130,6 +150,8 @@ class I18n {
                 "btn.zoom.in": "+",
                 "btn.zoom.out": "−",
                 "btn.zoom.reset": "↺",
+                "btn.sheet.prev": "‹",
+                "btn.sheet.next": "›",
                 "project.name": "Проект",
                 "project.status": "Проектът е зареден",
                 "tab.settings": "⚙ Settings",
@@ -137,12 +159,25 @@ class I18n {
                 "tab.results": "📊 Results",
                 "settings.iterations": "Iterations",
                 "settings.beamWidth": "Beam Width",
-                "settings.seed": "Seed",
                 "settings.quality": "Quality Profile",
                 "settings.quality.fast": "Fast",
                 "settings.quality.balanced": "Balanced",
                 "settings.quality.precise": "Precise",
                 "settings.randomize": "Randomize",
+                "settings.help.hint": "Настройки на оптимизацията",
+                "settings.help.open": "Отвори помощ за настройките на оптимизацията",
+                "settings.help.close": "Затвори помощта",
+                "settings.help.title": "Помощ за настройките на оптимизацията",
+                "settings.help.iterations.title": "Iterations — брой итерации",
+                "settings.help.iterations.body": "Брой независими опити за оптимизация.",
+                "settings.help.iterations.effect": "По-висока стойност може да намери по-добър резултат, но оптимизацията ще продължи по-дълго. По-ниска стойност завършва по-бързо, но може да пропусне по-добър layout.",
+                "settings.help.beam.title": "Beam Width — ширина на лъча",
+                "settings.help.beam.body": "Брой най-добри частични layout-и, които се запазват на всяка стъпка от търсенето.",
+                "settings.help.beam.effect": "По-висока стойност разглежда повече алтернативи и може да подобри качеството, но използва повече време и памет. По-ниска стойност е по-бърза, но търси по-тясно.",
+                "settings.help.randomize.title": "Randomize — случайно търсене",
+                "settings.help.randomize.body": "Когато е включено, оптимизаторът изследва различни случайни search paths при подреждането на кандидатните layout-и.",
+                "settings.help.randomize.effect": "Включете го, за да опитате по-разнообразни подреждания. Това може да намери различен резултат, но повторните изпълнения може да не са възпроизводими и обикновено отнемат подобно време. Изключете го за стабилни, повторяеми резултати.",
+                "settings.help.note": "Съвет: започнете с профил Balanced. Увеличете първо Iterations, когато искате повече време за търсене; увеличете Beam Width, когато искате да се запазват повече алтернативи.",
                 "data.sheet": "Sheet",
                 "data.sheet.width": "Width (mm)",
                 "data.sheet.height": "Height (mm)",
@@ -177,6 +212,7 @@ class I18n {
                 "results.visualization": "Визуализация",
                 "results.noResults": "Няма резултати",
                 "results.sheet.label": "Лист",
+                "results.sheet.indicator": "Лист {current} от {total}",
                 "results.legend": "Черна линия = Кант",
                 "optimization.running": "Оптимизация...",
                 "optimization.done": "Готово за",
@@ -186,6 +222,8 @@ class I18n {
                 "export.pdf.sheet": "Sheet",
                 "export.pdf.kerf": "Kerf",
                 "export.pdf.edges": "Кантове (L1,L2,S1,S2)",
+                "export.pdf.efficiency": "Ефективност",
+                "export.pdf.parts": "Части",
                 "export.pdf.yes": "Да",
                 "export.pdf.no": "Не",
                 "example.select": "Избери пример...",
@@ -207,7 +245,9 @@ class I18n {
                 "messages.projectLoaded": "Loaded:",
                 "messages.projectCreated": "New project created",
                 "messages.csvExported": "CSV exported",
+                "messages.pdfExported": "PDF с всички листове е готов за печат",
                 "messages.pngExported": "PNG exported",
+                "messages.pngExportedCount": "Експортирани са {count} PNG файла",
                 "messages.loaded": "Зареден:"
             }
         };
@@ -238,6 +278,11 @@ class I18n {
         for (var k = 0; k < vals.length; k++) {
             var key3 = vals[k].getAttribute('data-i18n-value');
             vals[k].value = this.t(key3);
+        }
+        var aria = document.querySelectorAll('[data-i18n-aria-label]');
+        for (var m = 0; m < aria.length; m++) {
+            var key4 = aria[m].getAttribute('data-i18n-aria-label');
+            aria[m].setAttribute('aria-label', this.t(key4));
         }
     }
 }
