@@ -152,10 +152,11 @@
 </main>
 </div>
 <script src="/js/neutralino.js"></script>
-<script src="/js/app/model/Rect.js"></script>
 <script src="/js/app/model/Part.js"></script>
-<script src="/js/app/model/Sheet.js"></script>
-<script src="/js/app/engine/Optimizer.js"></script>
+<!-- Cutting engine: generated bundle + the adapter that keeps `new Optimizer(...)`.
+     Regenerate the bundle with: node resources/js/app/engine/build-engine.mjs -->
+<script src="/js/app/engine/cut-engine.bundle.js"></script>
+<script src="/js/app/engine/OptimizerAdapter.js"></script>
 <script src="/js/app/ProjectManager.js"></script>
 <script src="/js/app/i18n.js"></script>
 <script src="/js/app/svgLibrary.js"></script>
