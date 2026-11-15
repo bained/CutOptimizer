@@ -13,6 +13,17 @@ class ProjectManager {
         this.kerf = 4;
         this.result = null;
         this.projectFilePath = '';
+
+        // Cutting options. These are plain data; the optimizer reads them on
+        // every run, so changing one does not throw away the current plan.
+        this.mode = 'optional';
+        this.grained = false;
+        this.odrMin = 0;
+
+        /** @type {{w:number,h:number,qty:number}[]} extra sheet sizes in stock */
+        this.formats = [];
+        /** @type {{w:number,h:number,qty:number}[]} leftovers, cut before new sheets */
+        this.offcuts = [];
     }
 
     parseNumericValue(val) {
@@ -229,6 +240,68 @@ class ProjectManager {
         return expanded;
     }
 
+    // ==================== STOCK ====================
+
+    /**
+     * Replaces the sheet-format list.
+     * @param {{w:number,h:number,qty:number}[]} list
+     */
+    setFormats(list) {
+        this.formats = (Array.isArray(list) ? list : []).map(function (f) {
+            return { w: +f.w, h: +f.h, qty: Math.max(1, +(f.qty || 1)) };
+        });
+    }
+
+    addFormat(w, h, qty) {
+        if (!(w > 0) || !(h > 0)) throw new Error('Format size must be positive.');
+        this.formats.push({ w: +w, h: +h, qty: Math.max(1, +(qty || 1)) });
+    }
+
+    removeFormat(index) {
+        if (index >= 0 && index < this.formats.length) this.formats.splice(index, 1);
+    }
+
+    /**
+     * Replaces the off-cut list.
+     * @param {{w:number,h:number,qty:number}[]} list
+     */
+    setOffcuts(list) {
+        this.offcuts = (Array.isArray(list) ? list : []).map(function (c) {
+            return { w: +c.w, h: +c.h, qty: Math.max(1, +(c.qty || 1)) };
+        });
+    }
+
+    addOffcut(w, h, qty) {
+        if (!(w > 0) || !(h > 0)) throw new Error('Off-cut size must be positive.');
+        this.offcuts.push({ w: +w, h: +h, qty: Math.max(1, +(qty || 1)) });
+    }
+
+    removeOffcut(index) {
+        if (index >= 0 && index < this.offcuts.length) this.offcuts.splice(index, 1);
+    }
+
+    /**
+     * Cutting options: direction, grain, minimum reusable off-cut.
+     */
+    setOptions(opts) {
+        if (!opts) return;
+        if (opts.mode === 'alongLength' || opts.mode === 'alongWidth' || opts.mode === 'optional') {
+            this.mode = opts.mode;
+        }
+        if (opts.grained !== undefined) this.grained = opts.grained === true;
+        if (opts.odrMin !== undefined) this.odrMin = Math.max(0, +opts.odrMin || 0);
+    }
+
+    /** Pushes the current stock and options into the optimizer. */
+    applyOptimizerSettings() {
+        if (!this.optimizer) return;
+        this.optimizer.setMode(this.mode);
+        this.optimizer.setGrained(this.grained);
+        this.optimizer.setFormats(this.formats);
+        this.optimizer.setOffcuts(this.offcuts);
+        this.optimizer.setWaste(this.odrMin > 0 ? { minStripW: this.odrMin, minPieceW: this.odrMin } : null);
+    }
+
     async runOptimization(iterations, beamWidth, randomize, onProgress) {
         if (!this.optimizer) {
             throw new Error('ProjectManager: No project loaded.');
@@ -241,6 +314,9 @@ class ProjectManager {
         // Разгръщаме според qty — динамично, без да променяме оригиналния списък
         var expandedParts = this.expandParts();
         this.lastExpandedPartsCount = expandedParts.length;
+
+        // Stock and cutting options are read fresh on every run.
+        this.applyOptimizerSettings();
 
         console.log('ProjectManager.runOptimization: compactParts=' + this.parts.length +
             ', expandedParts=' + expandedParts.length +
@@ -302,9 +378,16 @@ class ProjectManager {
         for (var si = 0; si < this.result.sheets.length; si++) {
             var s = this.result.sheets[si];
             var sheetData = {
+                // A plan may mix sheet formats, so each sheet records its own
+                // size, and whether it was cut from leftover stock.
+                w: s.w,
+                h: s.h,
                 efficiency: s.efficiency,
+                isOffcut: s.isOffcut === true,
                 parts: []
             };
+            if (s.format !== undefined) sheetData.format = s.format;
+            if (s.offcutId !== undefined) sheetData.offcutId = s.offcutId;
 
             for (var pi = 0; pi < s.parts.length; pi++) {
                 var p = s.parts[pi];
@@ -314,7 +397,8 @@ class ProjectManager {
                     y: p.y,
                     w: p.w,
                     h: p.h,
-                    rotated: p.rotated ? 1 : 0
+                    rotated: p.rotated ? 1 : 0,
+                    edges: Array.isArray(p.edges) ? p.edges.slice() : [0, 0, 0, 0]
                 });
             }
 

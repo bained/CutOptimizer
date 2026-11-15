@@ -121,7 +121,17 @@ async function onExampleSelect() {
 async function onSaveProject() {
     try {
         if (!projectManager) return;
-        var state = JSON.stringify({ sheet: projectManager.getSheetData(), parts: projectManager.getPartsData(), settings: { iterations: +(document.getElementById('input-iterations').value) || 50, beamWidth: +(document.getElementById('input-beam-width').value) || 12, randomize: document.getElementById('input-randomize').checked } }, null, 2);
+        var state = JSON.stringify({
+            sheet: projectManager.getSheetData(),
+            parts: projectManager.getPartsData(),
+            settings: {
+                mode: projectManager.mode,
+                grained: projectManager.grained,
+                odrMin: projectManager.odrMin
+            },
+            formats: projectManager.formats,
+            offcuts: projectManager.offcuts
+        }, null, 2);
         var r = await Neutralino.os.showSaveDialog('Save Project', { filters: [{ name: 'Project files', extensions: ['json'] }] });
         if (!r) return; r = r.endsWith('.json') ? r : r + '.json';
         await Neutralino.filesystem.writeFile(r, state); currentFilePath = r; updateProjectName(currentFilePath);
@@ -139,10 +149,10 @@ async function onLoadProject() {
         projectManager.updateSheet(+sheetData.sheetW || 2440, +sheetData.sheetH || 2070, +sheetData.kerf || 4);
         projectManager.importPartsFromJSON(JSON.stringify({ parts: d.parts || [] }));
         if (d.settings) {
-            var it = document.getElementById('input-iterations'); if (it) it.value = d.settings.iterations || 50;
-            var bw = document.getElementById('input-beam-width'); if (bw) bw.value = d.settings.beamWidth || 12;
-            var rn = document.getElementById('input-randomize'); if (rn) rn.checked = !!d.settings.randomize;
+            projectManager.setOptions(d.settings);
         }
+        if (Array.isArray(d.formats)) projectManager.setFormats(d.formats);
+        if (Array.isArray(d.offcuts)) projectManager.setOffcuts(d.offcuts);
         currentFilePath = r[0]; refreshAllUI(); updateProjectName(currentFilePath); await saveLastProject();
         document.getElementById('status-text').textContent = i18n.t('messages.projectLoaded') + ' ' + r[0];
     } catch (err) { setStatusError(err.message); }
@@ -150,14 +160,15 @@ async function onLoadProject() {
 
 function onNewProject() {
     if (!projectManager) return;
-    projectManager.parts = []; projectManager.sheetW = 2440; projectManager.sheetH = 2070; projectManager.kerf = 4;
-    projectManager.optimizer = new Optimizer(2440, 2070, 4); projectManager.result = null; currentFilePath = '';
+    projectManager.parts = [];
+    projectManager.formats = [];
+    projectManager.offcuts = [];
+    projectManager.setOptions({ mode: 'optional', grained: false, odrMin: 0 });
+    projectManager.updateSheet(2440, 2070, 4); projectManager.result = null; currentFilePath = '';
     activeSheetIndex = 0;
     updateSheetNavigation(null);
     document.getElementById('input-sheet-w').value = 2440; document.getElementById('input-sheet-h').value = 2070;
-    document.getElementById('input-sheet-kerf').value = 4; document.getElementById('input-iterations').value = 50;
-    document.getElementById('input-beam-width').value = 12;
-    document.getElementById('input-randomize').checked = false;
+    document.getElementById('input-sheet-kerf').value = 4;
     refreshAllUI(); updateProjectName('');
     document.getElementById('status-text').textContent = i18n.t('messages.projectCreated');
 }
@@ -217,6 +228,17 @@ function refreshAllUI(meta) {
         document.getElementById('input-sheet-kerf').value = meta.kerf;
     }
     refreshPartsTable();
+    refreshFormatsTable();
+    refreshOffcutsTable();
+
+    // Cutting options live on the project, so the form mirrors them after a
+    // project is loaded.
+    var modeEl = document.getElementById('input-mode');
+    var grainedEl = document.getElementById('input-grained');
+    var odrEl = document.getElementById('input-odr-min');
+    if (modeEl) modeEl.value = projectManager.mode || 'optional';
+    if (grainedEl) grainedEl.checked = projectManager.grained === true;
+    if (odrEl) odrEl.value = projectManager.odrMin || 0;
 }
 
 function setStatusError(msg) {
@@ -258,32 +280,53 @@ function syncEdgeButtons(groupId) {
 
 function createResultSvg(layout, sheetIndices) {
     if (!layout || !layout.sheets.length || !sheetIndices.length) return null;
-    var firstSheet = layout.sheets[sheetIndices[0]];
-    var sw = firstSheet.w, sh = firstSheet.h;
-    var gap = 80, lh = 30, th = sheetIndices.length * (sh + gap + lh);
+
+    // Sheets may come from different formats, so each one is drawn at its own
+    // size. The canvas has to be as wide as the widest sheet, and the sheets
+    // are stacked from the top down with a running offset.
+    var gap = 80, lh = 30;
+    var canvasW = 0, canvasH = 0;
+    for (var k = 0; k < sheetIndices.length; k++) {
+        var s = layout.sheets[sheetIndices[k]];
+        if (s.w > canvasW) canvasW = s.w;
+        canvasH += s.h + gap + lh;
+    }
+
     var ns = 'http://www.w3.org/2000/svg';
     var rootSVG = document.createElementNS(ns, 'svg');
     rootSVG.setAttribute('xmlns', ns);
-    rootSVG.setAttribute('viewBox', '0 0 ' + (sw + 40) + ' ' + th);
+    rootSVG.setAttribute('viewBox', '0 0 ' + (canvasW + 40) + ' ' + canvasH);
     rootSVG.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     rootSVG.setAttribute('width', '100%'); rootSVG.setAttribute('height', '100%');
     rootSVG.style.background = '#E8EBED';
 
+    var oy = lh;
+
     for (var si = 0; si < sheetIndices.length; si++) {
         var sheetIndex = sheetIndices[si];
-        var sheet = layout.sheets[sheetIndex], oy = si * (sh + gap + lh) + lh;
+        var sheet = layout.sheets[sheetIndex];
+        var sw = sheet.w, sh = sheet.h;
 
         var lbl = document.createElementNS(ns, 'text');
         lbl.setAttribute('x', 10); lbl.setAttribute('y', oy - 10);
         lbl.setAttribute('font-family', 'sans-serif'); lbl.setAttribute('font-size', '15');
         lbl.setAttribute('font-weight', 'bold'); lbl.setAttribute('fill', '#2C3E50');
-        lbl.textContent = i18n.t('results.sheet.label') + ' ' + (sheetIndex + 1) + ' - ' + i18n.t('results.efficiency') + ': ' + sheet.efficiency.toFixed(1) + '%';
+        var caption = i18n.t('results.sheet.label') + ' ' + (sheetIndex + 1) +
+            ' - ' + i18n.t('results.efficiency') + ': ' + sheet.efficiency.toFixed(1) + '%' +
+            ' - ' + sw + ' x ' + sh + ' mm';
+        if (sheet.isOffcut) {
+            caption = i18n.t('results.offcut.label') + ' - ' + caption;
+        }
+        lbl.textContent = caption;
         rootSVG.appendChild(lbl);
 
         var sr = document.createElementNS(ns, 'rect');
         sr.setAttribute('x', 0); sr.setAttribute('y', oy);
         sr.setAttribute('width', sw); sr.setAttribute('height', sh);
-        sr.setAttribute('fill', '#F8F9FA'); sr.setAttribute('stroke', '#1A252F'); sr.setAttribute('stroke-width', 3);
+        sr.setAttribute('fill', sheet.isOffcut ? '#FDF6E3' : '#F8F9FA');
+        sr.setAttribute('stroke', sheet.isOffcut ? '#B7950B' : '#1A252F');
+        sr.setAttribute('stroke-width', 3);
+        if (sheet.isOffcut) sr.setAttribute('stroke-dasharray', '12 6');
         rootSVG.appendChild(sr);
 
         for (var gx = 100; gx < sw; gx += 100) {
@@ -350,6 +393,9 @@ function createResultSvg(layout, sheetIndices) {
             addLabel(g, p.name, Number(p.w), Number(p.h));
             rootSVG.appendChild(g);
         }
+
+        // Move down to where the next sheet (of whatever size) starts.
+        oy += sh + gap;
     }
 
     rootSVG.setAttribute('data-sheet-count', String(sheetIndices.length));
@@ -384,14 +430,132 @@ function renderSVG(layout) {
     applyZoom();
 }
 
-function onQualityChange() {
-    var q = document.querySelector('input[name="quality"]:checked');
-    if (!q) return;
-    var ii = document.getElementById('input-iterations'), bi = document.getElementById('input-beam-width');
-    switch (q.value) { case 'fast': ii.value = 10; bi.value = 6; break; case 'balanced': ii.value = 50; bi.value = 12; break; case 'precise': ii.value = 200; bi.value = 20; break; }
+function getSettings() {
+    return {
+        mode: document.getElementById('input-mode').value,
+        grained: document.getElementById('input-grained').checked,
+        odrMin: +(document.getElementById('input-odr-min').value) || 0
+    };
 }
 
-function getSettings() { return { iterations: +(document.getElementById('input-iterations').value) || 50, beamWidth: +(document.getElementById('input-beam-width').value) || 12, randomize: document.getElementById('input-randomize').checked }; }
+
+/**
+ * Reads the cutting options from the form and stores them on the project, so
+ * the Run button picks them up without a separate Apply step.
+ */
+function syncSettings() {
+    var s = getSettings();
+    projectManager.setOptions(s);
+    return s;
+}
+
+// ==================== SHEET STOCK ====================
+
+/** Renders the sheet-format table. */
+function refreshFormatsTable() {
+    var tb = document.getElementById('formats-table-body');
+    if (!tb) return;
+    tb.innerHTML = '';
+    var list = projectManager.formats;
+    for (var i = 0; i < list.length; i++) {
+        var f = list[i];
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td><input type="number" class="edit-w settings-input" value="' + f.w + '" min="1" max="5000"></td>' +
+            '<td><input type="number" class="edit-h settings-input" value="' + f.h + '" min="1" max="5000"></td>' +
+            '<td><input type="number" class="edit-q settings-input" value="' + f.qty + '" min="1" max="999"></td>' +
+            '<td><button class="btn-icon-small" data-index="' + i + '" title="Delete">X</button></td>';
+        tb.appendChild(tr);
+
+        (function (idx, tr2) {
+            var wEl = tr2.querySelector('.edit-w');
+            var hEl = tr2.querySelector('.edit-h');
+            var qEl = tr2.querySelector('.edit-q');
+            var del = tr2.querySelector('.btn-icon-small');
+            function onChange() {
+                var item = projectManager.formats[idx];
+                if (!item) return;
+                item.w = Math.max(1, +wEl.value || 1);
+                item.h = Math.max(1, +hEl.value || 1);
+                item.qty = Math.max(1, +qEl.value || 1);
+                saveLastProject();
+            }
+            wEl.addEventListener('change', onChange);
+            hEl.addEventListener('change', onChange);
+            qEl.addEventListener('change', onChange);
+            del.addEventListener('click', function () {
+                projectManager.removeFormat(idx);
+                refreshFormatsTable();
+                saveLastProject();
+            });
+        })(i, tr);
+    }
+}
+
+/** Renders the off-cut table. */
+function refreshOffcutsTable() {
+    var tb = document.getElementById('offcuts-table-body');
+    if (!tb) return;
+    tb.innerHTML = '';
+    var list = projectManager.offcuts;
+    for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td><input type="number" class="edit-w settings-input" value="' + c.w + '" min="1" max="5000"></td>' +
+            '<td><input type="number" class="edit-h settings-input" value="' + c.h + '" min="1" max="5000"></td>' +
+            '<td><input type="number" class="edit-q settings-input" value="' + c.qty + '" min="1" max="999"></td>' +
+            '<td><button class="btn-icon-small" data-index="' + i + '" title="Delete">X</button></td>';
+        tb.appendChild(tr);
+
+        (function (idx, tr2) {
+            var wEl = tr2.querySelector('.edit-w');
+            var hEl = tr2.querySelector('.edit-h');
+            var qEl = tr2.querySelector('.edit-q');
+            var del = tr2.querySelector('.btn-icon-small');
+            function onChange() {
+                var item = projectManager.offcuts[idx];
+                if (!item) return;
+                item.w = Math.max(1, +wEl.value || 1);
+                item.h = Math.max(1, +hEl.value || 1);
+                item.qty = Math.max(1, +qEl.value || 1);
+                saveLastProject();
+            }
+            wEl.addEventListener('change', onChange);
+            hEl.addEventListener('change', onChange);
+            qEl.addEventListener('change', onChange);
+            del.addEventListener('click', function () {
+                projectManager.removeOffcut(idx);
+                refreshOffcutsTable();
+                saveLastProject();
+            });
+        })(i, tr);
+    }
+}
+
+function onFormatAdd() {
+    try {
+        projectManager.addFormat(
+            +(document.getElementById('input-sheet-w').value) || 0,
+            +(document.getElementById('input-sheet-h').value) || 0,
+            1
+        );
+        refreshFormatsTable();
+        saveLastProject();
+    } catch (err) { setStatusError(err.message); }
+}
+
+function onOffcutAdd() {
+    try {
+        projectManager.addOffcut(
+            +(document.getElementById('input-sheet-w').value) || 0,
+            +(document.getElementById('input-sheet-h').value) || 0,
+            1
+        );
+        refreshOffcutsTable();
+        saveLastProject();
+    } catch (err) { setStatusError(err.message); }
+}
 
 function onSheetApply() {
     try {
@@ -500,11 +664,14 @@ async function runOptimization() {
     if (!projectManager) return;
     var btn = document.getElementById('btn-run'), st = document.getElementById('status-text');
     var pc = document.getElementById('progress-container'), pf = document.getElementById('progress-fill'), pt = document.getElementById('progress-text');
-    var s = getSettings();
+    // Cutting options live on the project; the engine reads them on every run.
+    syncSettings();
     btn.disabled = true; st.textContent = i18n.t('optimization.running'); pc.classList.remove('hidden'); pf.style.width = '0%'; pt.textContent = '0%';
     try {
         var t0 = performance.now();
-        var sum = await projectManager.runOptimization(s.iterations, s.beamWidth, s.randomize, function(cur, tot) {
+        // The first two arguments belonged to Beam Search. They are ignored now,
+        // so they are passed as zero and the engine decides for itself.
+        var sum = await projectManager.runOptimization(0, 0, false, function(cur, tot) {
             var pct = Math.round(cur / tot * 100); pf.style.width = pct + '%'; pt.textContent = pct + '%';
         });
         var t = ((performance.now() - t0) / 1000).toFixed(2);
@@ -513,6 +680,14 @@ async function runOptimization() {
         document.getElementById('result-score').textContent = sum.score.toFixed(2);
         document.getElementById('result-placed').textContent = sum.totalPlacedParts + ' / ' + (projectManager.lastExpandedPartsCount || 0);
         st.textContent = i18n.t('optimization.done') + ' ' + t + i18n.t('optimization.seconds');
+
+        // The engine never throws; it reports unplaced parts and lock conflicts
+        // through an error list. Show them instead of letting them vanish.
+        var layoutErrors = projectManager.getLayout() && projectManager.getLayout().errors;
+        if (layoutErrors && layoutErrors.length) {
+            setStatusError(layoutErrors.slice(0, 2).join(' | '));
+        }
+
         switchTab('results');
         if (projectManager.getLayout()) {
             activeSheetIndex = 0;
@@ -722,9 +897,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     var tabBtns = document.querySelectorAll('.tab-btn');
     for (var i = 0; i < tabBtns.length; i++) tabBtns[i].addEventListener('click', function() { switchTab(this.getAttribute('data-tab')); });
-    var qr = document.querySelectorAll('input[name="quality"]');
-    for (var j = 0; j < qr.length; j++) qr[j].addEventListener('change', onQualityChange);
     document.getElementById('btn-sheet-apply')?.addEventListener('click', onSheetApply);
+    document.getElementById('btn-format-add')?.addEventListener('click', onFormatAdd);
+    document.getElementById('btn-offcut-add')?.addEventListener('click', onOffcutAdd);
+    document.getElementById('input-mode')?.addEventListener('change', function() { syncSettings(); saveLastProject(); });
+    document.getElementById('input-grained')?.addEventListener('change', function() { syncSettings(); saveLastProject(); });
+    document.getElementById('input-odr-min')?.addEventListener('change', function() { syncSettings(); saveLastProject(); });
     document.getElementById('btn-sheet-import')?.addEventListener('click', onSheetImport);
     document.getElementById('btn-sheet-export')?.addEventListener('click', onSheetExport);
     document.getElementById('btn-part-add')?.addEventListener('click', onPartAdd);

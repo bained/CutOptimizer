@@ -214,13 +214,46 @@ class OptimizerAdapter {
       edgesByName.set(p.name, Array.isArray(p.edges) ? p.edges.slice() : [0, 0, 0, 0]);
     }
 
+    // The engine reports the off-cut id and area but not its outline, so the
+    // size is resolved from the stock the caller supplied: first by id, then by
+    // area, so an id mismatch cannot silently collapse the sheet to the parts'
+    // bounding box.
+    /** @type {Map<string, {w:number,h:number}>} */
+    const offcutSizes = new Map();
+    /** @type {{w:number,h:number,area:number}[]} */
+    const offcutByArea = [];
+    for (const c of this.offcuts) {
+      const qty = Math.max(1, Number(c.qty) || 1);
+      const base = c.id ?? 'offcut';
+      const area = Number(c.w) * Number(c.h);
+      for (let n = 0; n < qty; n++) {
+        offcutSizes.set(qty > 1 ? base + '#' + (n + 1) : base, { w: c.w, h: c.h });
+        offcutByArea.push({ w: c.w, h: c.h, area });
+      }
+    }
+
+    /**
+     * Finds the outline of the off-cut a plan was cut from.
+     * @param {any} plan
+     */
+    const sizeOf = (plan) => {
+      const byId = offcutSizes.get(plan.offcut);
+      if (byId) return byId;
+      const area = Number(plan.offcutArea) || 0;
+      for (const c of offcutByArea) {
+        if (Math.abs(c.area - area) < 1e-6) return { w: c.w, h: c.h };
+      }
+      return null;
+    };
+
     const sheets = [];
 
     // Leftover plans first: that is the stock actually cut.
     for (const plan of result.offcutPlans ?? []) {
+      const known = sizeOf(plan);
       sheets.push({
-        w: plan.offcutWidth ?? this._extentW(plan.parts),
-        h: plan.offcutHeight ?? this._extentH(plan.parts),
+        w: known ? known.w : this._extentW(plan.parts),
+        h: known ? known.h : this._extentH(plan.parts),
         efficiency: plan.offcutArea > 0 ? (plan.usedArea / plan.offcutArea) * 100 : 0,
         isOffcut: true,
         offcutId: plan.offcut,

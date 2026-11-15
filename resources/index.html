@@ -29,17 +29,16 @@
 <div class="settings-panel">
 <div class="settings-help-row"><span data-i18n="settings.help.hint">Optimization settings</span><button id="btn-settings-help" class="help-icon" type="button" aria-haspopup="dialog" aria-controls="settings-help-modal" data-i18n-aria-label="settings.help.open" title="Help">?</button></div>
 <div class="settings-row">
-<div class="settings-group"><label for="input-iterations" data-i18n="settings.iterations">Iterations</label><input type="number" id="input-iterations" class="settings-input" value="50" min="1" max="10000"></div>
-<div class="settings-group"><label for="input-beam-width" data-i18n="settings.beamWidth">Beam Width</label><input type="number" id="input-beam-width" class="settings-input" value="12" min="1" max="100"></div>
+<div class="settings-group"><label for="input-mode" data-i18n="settings.mode">Cutting direction</label>
+<select id="input-mode" class="settings-input">
+<option value="optional" data-i18n="settings.mode.optional">Optimal (engine chooses)</option>
+<option value="alongLength" data-i18n="settings.mode.alongLength">Along the length</option>
+<option value="alongWidth" data-i18n="settings.mode.alongWidth">Along the width</option>
+</select></div>
+<div class="settings-group"><label class="checkbox-label"><input type="checkbox" id="input-grained"><span data-i18n="settings.grained">Grain direction (no rotation)</span></label></div>
 </div>
 <div class="settings-row">
-<div class="settings-group"><label data-i18n="settings.quality">Quality Profile</label>
-<div class="radio-group">
-<label class="radio-label"><input type="radio" name="quality" value="fast"><span data-i18n="settings.quality.fast">Fast</span></label>
-<label class="radio-label"><input type="radio" name="quality" value="balanced" checked><span data-i18n="settings.quality.balanced">Balanced</span></label>
-<label class="radio-label"><input type="radio" name="quality" value="precise"><span data-i18n="settings.quality.precise">Precise</span></label>
-</div></div>
-<div class="settings-group"><label class="checkbox-label"><input type="checkbox" id="input-randomize"><span data-i18n="settings.randomize">Randomize</span></label></div>
+<div class="settings-group"><label for="input-odr-min" data-i18n="settings.odrMin">Minimum reusable off-cut (mm)</label><input type="number" id="input-odr-min" class="settings-input" value="0" min="0" max="1000"></div>
 </div>
 </div>
 </div>
@@ -49,10 +48,9 @@
 <div class="help-modal-card" role="document">
 <div class="help-modal-header"><h2 id="settings-help-title" data-i18n="settings.help.title">Optimization settings help</h2><button id="btn-settings-help-close" class="help-modal-close" type="button" aria-label="Close" data-i18n-aria-label="settings.help.close">×</button></div>
 <div class="help-modal-body">
-<section><h3 data-i18n="settings.help.iterations.title">Iterations</h3><p data-i18n="settings.help.iterations.body">Number of independent optimization attempts.</p><p data-i18n="settings.help.iterations.effect">Higher values can improve the result, but take longer. Lower values finish faster, but may miss better layouts.</p></section>
-<section><h3 data-i18n="settings.help.beam.title">Beam Width</h3><p data-i18n="settings.help.beam.body">Number of best partial layouts kept at each search step.</p><p data-i18n="settings.help.beam.effect">Higher values explore more alternatives and can improve quality, but use more time and memory. Lower values are faster, but search more narrowly.</p></section>
-<section><h3 data-i18n="settings.help.randomize.title">Randomize</h3><p data-i18n="settings.help.randomize.body">When enabled, the optimizer explores different randomized search paths while building candidate layouts.</p><p data-i18n="settings.help.randomize.effect">Enable it to try more varied arrangements. This can find a different result, but repeated runs may not be reproducible and may take a similar amount of time. Disable it for stable, repeatable results.</p></section>
-<p class="help-modal-note" data-i18n="settings.help.note">Tip: start with the Balanced profile. Increase Iterations first when you want to spend more time searching; increase Beam Width when you want to keep more alternatives.</p>
+<section><h3 data-i18n="settings.help.mode.title">Cutting direction</h3><p data-i18n="settings.help.mode.body">Optimal lets the engine decide how to pack the sheet. The other two force every cut to run along one direction, which suits a sliding table saw or a beam saw that only cuts one way.</p></section>
+<section><h3 data-i18n="settings.help.grained.title">Grain direction</h3><p data-i18n="settings.help.grained.body">Tick this when the material has a visible grain or a veneer that must run one way. Every part then keeps the orientation you entered, so 600 x 400 and 400 x 600 are no longer interchangeable.</p></section>
+<section><h3 data-i18n="settings.help.odrMin.title">Minimum reusable off-cut</h3><p data-i18n="settings.help.odrMin.body">Leftovers smaller than this are counted as scrap instead of reusable stock. Set it to the narrowest strip you would actually put back on the rack.</p></section>
 </div>
 </div>
 </div>
@@ -75,6 +73,33 @@
 <div class="settings-group"><label for="input-sheet-h" data-i18n="data.sheet.height">Height (mm)</label><input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000"></div>
 <div class="settings-group"><label for="input-sheet-kerf" data-i18n="data.sheet.kerf">Kerf (mm)</label><input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50"></div>
 <div class="settings-group" style="align-self:flex-end;"><button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;" data-i18n="btn.apply">Apply</button></div>
+<div class="data-section">
+<div class="data-section-header"><h3 data-i18n="data.formats">Sheet stock</h3>
+<div class="btn-row"><button id="btn-format-add" class="btn-secondary" data-i18n="btn.add">➕ Add</button></div></div>
+<p class="section-hint" data-i18n="data.formats.hint">Leave the list empty to cut only the sheet above. With entries here the engine may use any of these sizes, up to the quantity you enter.</p>
+<div id="formats-table-container">
+<table class="data-table"><thead><tr>
+<th data-i18n="data.formats.w">Width (mm)</th>
+<th data-i18n="data.formats.h">Height (mm)</th>
+<th data-i18n="data.formats.qty">In stock</th>
+<th></th>
+</tr></thead><tbody id="formats-table-body"></tbody></table></div>
+</div>
+
+<div class="data-section">
+<div class="data-section-header"><h3 data-i18n="data.offcuts">Off-cut stock</h3>
+<div class="btn-row"><button id="btn-offcut-add" class="btn-secondary" data-i18n="btn.add">➕ Add</button></div></div>
+<p class="section-hint" data-i18n="data.offcuts.hint">Leftovers already on the rack. They are cut before any new sheet is opened, smallest first.</p>
+<div id="offcuts-table-container">
+<table class="data-table"><thead><tr>
+<th data-i18n="data.offcuts.w">Width (mm)</th>
+<th data-i18n="data.offcuts.h">Height (mm)</th>
+<th data-i18n="data.offcuts.qty">Pieces</th>
+<th></th>
+</tr></thead><tbody id="offcuts-table-body"></tbody></table></div>
+</div>
+
+
 </div></div>
 <div class="data-section">
 <div class="data-section-header"><h3><span data-i18n="data.parts">Parts</span> (<span id="parts-count-label">0</span>)</h3>
