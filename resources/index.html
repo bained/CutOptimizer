@@ -72,18 +72,9 @@
 <div class="settings-group"><label for="input-sheet-w" data-i18n="data.sheet.width">Width (mm)</label><input type="number" id="input-sheet-w" class="settings-input" value="2440" min="1" max="5000"></div>
 <div class="settings-group"><label for="input-sheet-h" data-i18n="data.sheet.height">Height (mm)</label><input type="number" id="input-sheet-h" class="settings-input" value="2070" min="1" max="5000"></div>
 <div class="settings-group"><label for="input-sheet-kerf" data-i18n="data.sheet.kerf">Kerf (mm)</label><input type="number" id="input-sheet-kerf" class="settings-input" value="4" min="0" max="50"></div>
+<div class="settings-group"><label for="input-sheet-trim" data-i18n="data.sheet.trim">Trim (mm)</label><input type="number" id="input-sheet-trim" class="settings-input" value="0" min="0" max="50"></div>
 <div class="settings-group" style="align-self:flex-end;"><button id="btn-sheet-apply" class="btn-primary" style="padding:6px 16px;font-size:14px;" data-i18n="btn.apply">Apply</button></div>
-<div class="data-section">
-<div class="data-section-header"><h3 data-i18n="data.formats">Sheet stock</h3>
-<div class="btn-row"><button id="btn-format-add" class="btn-secondary" data-i18n="btn.add">➕ Add</button></div></div>
-<p class="section-hint" data-i18n="data.formats.hint">Leave the list empty to cut only the sheet above. With entries here the engine may use any of these sizes, up to the quantity you enter.</p>
-<div id="formats-table-container">
-<table class="data-table"><thead><tr>
-<th data-i18n="data.formats.w">Width (mm)</th>
-<th data-i18n="data.formats.h">Height (mm)</th>
-<th data-i18n="data.formats.qty">In stock</th>
-<th></th>
-</tr></thead><tbody id="formats-table-body"></tbody></table></div>
+</div>
 </div>
 
 <div class="data-section">
@@ -99,8 +90,6 @@
 </tr></thead><tbody id="offcuts-table-body"></tbody></table></div>
 </div>
 
-
-</div></div>
 <div class="data-section">
 <div class="data-section-header"><h3><span data-i18n="data.parts">Parts</span> (<span id="parts-count-label">0</span>)</h3>
 <div class="btn-row"><button id="btn-parts-import" class="btn-secondary" data-i18n="btn.import">📂 Import</button><button id="btn-parts-export" class="btn-secondary" data-i18n="btn.export">💾 Export</button></div></div>

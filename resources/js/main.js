@@ -48,7 +48,7 @@ async function tryLoadLastProject() {
     try {
         var f = getBasePath() + '/' + LAST_PROJECT_FILE;
         var d = JSON.parse(await Neutralino.filesystem.readFile(f));
-        if (d.sheet) projectManager.updateSheet(+d.sheet.sheetW || 2440, +d.sheet.sheetH || 2070, +d.sheet.kerf || 4);
+        if (d.sheet) projectManager.updateSheet(+d.sheet.sheetW || 2440, +d.sheet.sheetH || 2070, +d.sheet.kerf || 4, +d.sheet.trim || 0);
         if (d.parts && Array.isArray(d.parts)) projectManager.importPartsFromJSON(JSON.stringify({ parts: d.parts }));
         currentFilePath = d.currentFile || '';
         return true;
@@ -146,7 +146,7 @@ async function onLoadProject() {
         var c = await Neutralino.filesystem.readFile(r[0]); var d = JSON.parse(c);
         var sheetData = d.sheet || d;
         if (!sheetData.sheetW && !sheetData.sheetH) throw new Error(i18n.t('error.invalidProject'));
-        projectManager.updateSheet(+sheetData.sheetW || 2440, +sheetData.sheetH || 2070, +sheetData.kerf || 4);
+        projectManager.updateSheet(+sheetData.sheetW || 2440, +sheetData.sheetH || 2070, +sheetData.kerf || 4, +sheetData.trim || 0);
         projectManager.importPartsFromJSON(JSON.stringify({ parts: d.parts || [] }));
         if (d.settings) {
             projectManager.setOptions(d.settings);
@@ -164,12 +164,14 @@ function onNewProject() {
     projectManager.formats = [];
     projectManager.offcuts = [];
     projectManager.setOptions({ mode: 'optional', grained: false, odrMin: 0 });
-    projectManager.updateSheet(2440, 2070, 4); projectManager.result = null; currentFilePath = '';
+    projectManager.updateSheet(2440, 2070, 4, 0); projectManager.result = null; currentFilePath = '';
     activeSheetIndex = 0;
     updateSheetNavigation(null);
     document.getElementById('input-sheet-w').value = 2440; document.getElementById('input-sheet-h').value = 2070;
     document.getElementById('input-sheet-kerf').value = 4;
+    var trEl = document.getElementById('input-sheet-trim'); if (trEl) trEl.value = 0;
     refreshAllUI(); updateProjectName('');
+
     document.getElementById('status-text').textContent = i18n.t('messages.projectCreated');
 }
 
@@ -219,17 +221,19 @@ function showPreviousSheet() { selectSheet(activeSheetIndex - 1); }
 function showNextSheet() { selectSheet(activeSheetIndex + 1); }
 
 function refreshAllUI(meta) {
-    if (!meta && projectManager) meta = { sheetW: projectManager.sheetW, sheetH: projectManager.sheetH, kerf: projectManager.kerf, partCount: projectManager.parts.length };
+    if (!meta && projectManager) meta = { sheetW: projectManager.sheetW, sheetH: projectManager.sheetH, kerf: projectManager.kerf, trim: projectManager.trim || 0, partCount: projectManager.parts.length };
     if (meta) {
-        document.getElementById('display-sheet-size').textContent = meta.sheetW + ' x ' + meta.sheetH + ' mm';
+        document.getElementById('display-sheet-size').textContent = meta.sheetW + ' x ' + meta.sheetH + ' mm' + (meta.trim ? ' (trim ' + meta.trim + ')' : '');
         document.getElementById('display-kerf').textContent = meta.kerf + ' mm';
         document.getElementById('display-parts-count').textContent = meta.partCount + ' ' + i18n.t('results.parts').toLowerCase();
         document.getElementById('input-sheet-w').value = meta.sheetW; document.getElementById('input-sheet-h').value = meta.sheetH;
         document.getElementById('input-sheet-kerf').value = meta.kerf;
+        var trEl = document.getElementById('input-sheet-trim');
+        if (trEl) trEl.value = meta.trim !== undefined ? meta.trim : (projectManager ? projectManager.trim : 0);
     }
     refreshPartsTable();
-    refreshFormatsTable();
     refreshOffcutsTable();
+
 
     // Cutting options live on the project, so the form mirrors them after a
     // project is loaded.
@@ -328,6 +332,19 @@ function createResultSvg(layout, sheetIndices) {
         sr.setAttribute('stroke-width', 3);
         if (sheet.isOffcut) sr.setAttribute('stroke-dasharray', '12 6');
         rootSVG.appendChild(sr);
+
+        var trim = (projectManager && projectManager.trim) ? projectManager.trim : 0;
+        if (trim > 0 && !sheet.isOffcut && sw > 2 * trim && sh > 2 * trim) {
+            var tr = document.createElementNS(ns, 'rect');
+            tr.setAttribute('x', trim); tr.setAttribute('y', oy + trim);
+            tr.setAttribute('width', sw - 2 * trim); tr.setAttribute('height', sh - 2 * trim);
+            tr.setAttribute('fill', 'none');
+            tr.setAttribute('stroke', '#E74C3C');
+            tr.setAttribute('stroke-width', 1);
+            tr.setAttribute('stroke-dasharray', '8 4');
+            rootSVG.appendChild(tr);
+        }
+
 
         for (var gx = 100; gx < sw; gx += 100) {
             var gl = document.createElementNS(ns, 'line');
@@ -547,11 +564,9 @@ function onFormatAdd() {
 
 function onOffcutAdd() {
     try {
-        projectManager.addOffcut(
-            +(document.getElementById('input-sheet-w').value) || 0,
-            +(document.getElementById('input-sheet-h').value) || 0,
-            1
-        );
+        var w = Math.round((+(document.getElementById('input-sheet-w').value) || 2440) / 2);
+        var h = Math.round((+(document.getElementById('input-sheet-h').value) || 2070) / 2);
+        projectManager.addOffcut(w, h, 1);
         refreshOffcutsTable();
         saveLastProject();
     } catch (err) { setStatusError(err.message); }
@@ -559,11 +574,15 @@ function onOffcutAdd() {
 
 function onSheetApply() {
     try {
-        var w = +(document.getElementById('input-sheet-w').value) || 0, h = +(document.getElementById('input-sheet-h').value) || 0, k = +(document.getElementById('input-sheet-kerf').value) || 0;
-        projectManager.updateSheet(w, h, k); refreshAllUI(); saveLastProject();
-        document.getElementById('status-text').textContent = i18n.t('messages.sheetUpdated') + ': ' + w + 'x' + h + ', kerf=' + k;
+        var w = +(document.getElementById('input-sheet-w').value) || 0,
+            h = +(document.getElementById('input-sheet-h').value) || 0,
+            k = +(document.getElementById('input-sheet-kerf').value) || 0,
+            trim = +(document.getElementById('input-sheet-trim')?.value) || 0;
+        projectManager.updateSheet(w, h, k, trim); refreshAllUI(); saveLastProject();
+        document.getElementById('status-text').textContent = i18n.t('messages.sheetUpdated') + ': ' + w + 'x' + h + ', kerf=' + k + (trim ? ', trim=' + trim : '');
     } catch (err) { setStatusError(err.message); }
 }
+
 
 function onPartAdd() {
     try {
@@ -898,7 +917,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var tabBtns = document.querySelectorAll('.tab-btn');
     for (var i = 0; i < tabBtns.length; i++) tabBtns[i].addEventListener('click', function() { switchTab(this.getAttribute('data-tab')); });
     document.getElementById('btn-sheet-apply')?.addEventListener('click', onSheetApply);
+    ['input-sheet-w', 'input-sheet-h', 'input-sheet-kerf', 'input-sheet-trim'].forEach(function(id) {
+        document.getElementById(id)?.addEventListener('change', onSheetApply);
+    });
     document.getElementById('btn-format-add')?.addEventListener('click', onFormatAdd);
+
     document.getElementById('btn-offcut-add')?.addEventListener('click', onOffcutAdd);
     document.getElementById('input-mode')?.addEventListener('change', function() { syncSettings(); saveLastProject(); });
     document.getElementById('input-grained')?.addEventListener('change', function() { syncSettings(); saveLastProject(); });

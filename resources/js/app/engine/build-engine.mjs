@@ -26,6 +26,7 @@ const ORDER = [
   'offcuts.js',
   'verify.js',
   'waste.js',
+  'pack-blocks.js',
   'pack-mixed.js',
   'pack-offcuts.js',
   'pack-strips.js',

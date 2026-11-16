@@ -11,8 +11,10 @@ class ProjectManager {
         this.sheetW = 2440;
         this.sheetH = 2070;
         this.kerf = 4;
+        this.trim = 0;
         this.result = null;
         this.projectFilePath = '';
+
 
         // Cutting options. These are plain data; the optimizer reads them on
         // every run, so changing one does not throw away the current plan.
@@ -38,14 +40,18 @@ class ProjectManager {
     /**
      * Актуализира параметрите на листа и пресъздава Optimizer-а.
      */
-    updateSheet(w, h, kerf) {
-        if (w <= 0 || h <= 0 || kerf < 0) {
+    updateSheet(w, h, kerf, trim = 0) {
+        if (w <= 0 || h <= 0 || kerf < 0 || trim < 0) {
             throw new Error('Sheet dimensions must be positive numbers.');
         }
         this.sheetW = w;
         this.sheetH = h;
         this.kerf = kerf;
+        this.trim = Math.max(0, +trim || 0);
         this.optimizer = new Optimizer(w, h, kerf);
+        if (this.optimizer && typeof this.optimizer.setTrim === 'function') {
+            this.optimizer.setTrim(this.trim);
+        }
         this.result = null;
     }
 
@@ -56,7 +62,8 @@ class ProjectManager {
         return {
             sheetW: this.sheetW,
             sheetH: this.sheetH,
-            kerf: this.kerf
+            kerf: this.kerf,
+            trim: this.trim || 0
         };
     }
 
@@ -75,8 +82,10 @@ class ProjectManager {
         var w = this.parseNumericValue(data.sheetW);
         var h = this.parseNumericValue(data.sheetH);
         var kerf = this.parseNumericValue(data.kerf);
-        this.updateSheet(w, h, kerf);
+        var trim = this.parseNumericValue(data.trim) || 0;
+        this.updateSheet(w, h, kerf, trim);
     }
+
 
     // ==================== PARTS ====================
 
@@ -189,6 +198,8 @@ class ProjectManager {
             this.sheetW = this.parseNumericValue(data.sheetW);
             this.sheetH = this.parseNumericValue(data.sheetH);
             this.kerf = this.parseNumericValue(data.kerf);
+            this.trim = this.parseNumericValue(data.trim) || 0;
+
 
             this.parts = [];
             for (var i = 0; i < data.parts.length; i++) {
@@ -297,10 +308,14 @@ class ProjectManager {
         if (!this.optimizer) return;
         this.optimizer.setMode(this.mode);
         this.optimizer.setGrained(this.grained);
+        if (typeof this.optimizer.setTrim === 'function') {
+            this.optimizer.setTrim(this.trim);
+        }
         this.optimizer.setFormats(this.formats);
         this.optimizer.setOffcuts(this.offcuts);
         this.optimizer.setWaste(this.odrMin > 0 ? { minStripW: this.odrMin, minPieceW: this.odrMin } : null);
     }
+
 
     async runOptimization(iterations, beamWidth, randomize, onProgress) {
         if (!this.optimizer) {

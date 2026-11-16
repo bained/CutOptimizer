@@ -32,9 +32,11 @@ class OptimizerAdapter {
     this.sheetW = sheetW;
     this.sheetH = sheetH;
     this.kerf = kerf;
+    this.trim = 0;
 
     this.mode = 'optional';
     this.grained = false;
+
 
     /** @type {{w:number,h:number,qty?:number,id?:string}[]} */
     this.formats = [];
@@ -58,7 +60,18 @@ class OptimizerAdapter {
   }
 
   /**
+   * Border margin (trim) in mm on all four sides of the sheet.
+   *
+   * @param {number} trim
+   */
+  setTrim(trim) {
+    this.trim = Math.max(0, +trim || 0);
+    return this;
+  }
+
+  /**
    * Grain direction of the material. When true every part keeps its orientation.
+
    *
    * @param {boolean} grained
    */
@@ -136,9 +149,10 @@ class OptimizerAdapter {
       width: this.sheetW,
       height: this.sheetH,
       kerf: this.kerf,
-      border: 0,
+      border: this.trim || 0,
       grained: this.grained,
     };
+
 
     const result = engine.solveCuttingPlan({
       sheet,

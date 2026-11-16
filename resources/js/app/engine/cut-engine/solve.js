@@ -11,6 +11,7 @@
  */
 import { packMixedBest } from './pack-mixed.js';
 import { packStripsPool } from './pack-strips.js';
+import { packBlocksBest } from './pack-blocks.js';
 import { packIntoOffcutsBest } from './pack-offcuts.js';
 import { expandOffcuts } from './offcuts.js';
 import { geometryFor, planScore } from './formats.js';
@@ -21,7 +22,8 @@ import { stats } from './verify.js';
 /** @typedef {{id:string,w:number,h:number,rotatable:boolean}} Piece */
 
 /**
- * Picks the plan with the fewest sheets, then the most area used.
+ * Picks the plan with the fewest sheets, then the most area used,
+ * and tie-breaks in favour of the largest single leftover.
  *
  * @param {any[][]} candidates
  * @returns {any[]}
@@ -31,8 +33,18 @@ function pickBest(candidates) {
   let best = [];
   let bestScore = Infinity;
   for (const sheets of candidates) {
+    if (!sheets || sheets.length === 0) continue;
+    const last = sheets[sheets.length - 1];
+    let maxLeftover = 0;
+    if (last && last.unusedRects) {
+      for (const r of last.unusedRects) {
+        if (r.w * r.h > maxLeftover) maxLeftover = r.w * r.h;
+      }
+    }
     const score =
-      sheets.length * 1e12 - sheets.reduce((s, x) => s + x.usedArea, 0) * 1e-3;
+      sheets.length * 1e12 -
+      sheets.reduce((s, x) => s + x.usedArea, 0) * 1e-3 -
+      maxLeftover * 1e-6;
     if (score < bestScore) {
       bestScore = score;
       best = sheets;
@@ -47,23 +59,28 @@ function pickBest(candidates) {
  *
  * @param {Piece[]} pieces
  * @param {SheetGeometry} geom
- * @param {'optional'|'alongLength'|'alongWidth'} [mode]
+ * @param {'optional'|'alongLength'|'alongWidth'|'blocks'} [mode]
  * @returns {any[]}
  */
 export function solve(pieces, geom, mode = 'optional') {
+  if (mode === 'blocks') {
+    return packBlocksBest(pieces, geom);
+  }
   if (mode === 'alongLength' || mode === 'alongWidth') {
     return packStripsPool(pieces, geom, mode);
   }
 
-  // "Optional" allows any direction, so it may use both families of layouts.
+  // "Optional" allows any direction, so it may use all layout families.
   /** @type {any[][]} */
   const candidates = [];
+  candidates.push(packBlocksBest(pieces, geom));
   candidates.push(packMixedBest(pieces, geom).sheets);
   candidates.push(packStripsPool(pieces, geom, 'alongLength'));
   candidates.push(packStripsPool(pieces, geom, 'alongWidth'));
 
   return pickBest(candidates);
 }
+
 
 /**
  * Packs the job across several sheet formats, respecting available stock.
