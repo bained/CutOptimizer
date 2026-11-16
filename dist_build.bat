@@ -1,10 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM dist_build.bat — Full build and packaging for CutOptimizer v2.0.0
+REM dist_build.bat — Full build and packaging for CutOptimizer v2.0.1
 
 echo ====================================================
-echo   CutOptimizer v2.0.0 - Full Build and Package
+echo   CutOptimizer v2.0.1 - Full Build and Package
 echo ====================================================
 echo.
 
@@ -34,10 +34,8 @@ if exist "dist\CutOptimizer\CutOptimizer-win_x64.exe" (
 echo.
 echo [4/5] Copying runtime examples and assets...
 if not exist "dist\CutOptimizer\examples\" mkdir "dist\CutOptimizer\examples"
-if exist "examples\kitchen_project.json" (
-    copy /Y "examples\kitchen_project.json" "dist\CutOptimizer\examples\kitchen_project.json" >nul
-) else if exist "resources\examples\kitchen_project.json" (
-    copy /Y "resources\examples\kitchen_project.json" "dist\CutOptimizer\examples\kitchen_project.json" >nul
+if exist "examples\*.json" (
+    copy /Y "examples\*.json" "dist\CutOptimizer\examples\" >nul
 )
 
 if exist "config.ini" (
@@ -45,9 +43,9 @@ if exist "config.ini" (
 )
 
 echo.
-echo [5/5] Creating distribution release ZIP (CutOptimizer_v2.0.0.zip)...
+echo [5/5] Creating distribution release ZIP (CutOptimizer_v2.0.1.zip)...
 powershell -NoProfile -Command ^
-    "$dist = 'dist\CutOptimizer'; $zip = 'dist\CutOptimizer\CutOptimizer_v2.0.0.zip'; " ^
+    "$dist = 'dist\CutOptimizer'; $zip = 'dist\CutOptimizer\CutOptimizer_v2.0.1.zip'; " ^
     "if (Test-Path $zip) { Remove-Item $zip -Force }; " ^
     "Compress-Archive -Path ('{0}\CutOptimizer.exe' -f $dist), ('{0}\resources.neu' -f $dist), ('{0}\examples' -f $dist) -DestinationPath $zip -Force; " ^
     "Write-Host ('Created: {0} ({1:N2} MB)' -f $zip, ((Get-Item $zip).Length / 1MB))"
@@ -56,6 +54,6 @@ echo.
 echo ====================================================
 echo   BUILD COMPLETE!
 echo   Executable: dist\CutOptimizer\CutOptimizer.exe
-echo   Release ZIP: dist\CutOptimizer\CutOptimizer_v2.0.0.zip
+echo   Release ZIP: dist\CutOptimizer\CutOptimizer_v2.0.1.zip
 echo ====================================================
 

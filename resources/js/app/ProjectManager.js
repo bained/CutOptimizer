@@ -218,6 +218,8 @@ class ProjectManager {
                 ));
             }
 
+            this.setOffcuts(data.offcuts);
+
             this.projectFilePath = filePath;
             this.result = null;
 

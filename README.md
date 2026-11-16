@@ -1,6 +1,6 @@
 # CutOptimizer
 
-**Version 2.0.0**
+**Version 2.0.1**
 
 **CutOptimizer** is a high-performance desktop application for **sheet cutting optimization** — it calculates the optimal layout for cutting rectangular parts from sheets of material (chipboard, plywood, MDF, acrylic, etc.), minimizing waste and maximizing material usage.
 
@@ -15,6 +15,12 @@ Built with [Neutralino.js](https://neutralino.js.org/) and a deterministic 2D gu
 - **Edge Trim (Окрайчване)**: Configurable margin trim on all four sides of the board, visually indicated on layouts.
 - **Off-cut Stock**: Pre-existing shop leftovers are consumed before opening any new full board.
 - **Cleaned Data UI**: Streamlined single-board setup with kerf and edge trim, eliminating duplicate input fields.
+
+## What's New in Version 2.0.1
+
+- Fixed loading example projects in the Examples dropdown.
+- Loading an example now restores its off-cut stock.
+- Added `tp_01.json` as a bundled example project.
 
 ## Features
 

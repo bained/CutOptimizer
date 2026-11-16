@@ -1,6 +1,6 @@
 {
   "name": "cutoptimizer",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Cut Optimization desktop application (Block Guillotine Cutting Engine)",
   "type": "module",
   "private": true

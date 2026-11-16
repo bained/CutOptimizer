@@ -74,7 +74,7 @@ async function initApp() {
                 var entries = await Neutralino.filesystem.readDirectory(getBasePath() + '/' + EXAMPLES_DIR);
                 var first = null;
                 for (var i = 0; i < entries.length; i++) {
-                    if (entries[i].type === 'FILE' && entries[i].name.endsWith('.json')) { first = EXAMPLES_DIR + entries[i].name; break; }
+                    if (entries[i].type === 'FILE' && entries[i].entry.endsWith('.json')) { first = EXAMPLES_DIR + entries[i].entry; break; }
                 }
                 if (first) { await projectManager.loadProject(getBasePath() + '/' + first); currentFilePath = first; }
             } catch (e) {}
@@ -96,10 +96,10 @@ async function populateExamples() {
         var entries = await Neutralino.filesystem.readDirectory(getBasePath() + '/' + EXAMPLES_DIR);
         var found = false;
         for (var i = 0; i < entries.length; i++) {
-            if (entries[i].type === 'FILE' && entries[i].name.endsWith('.json')) {
+            if (entries[i].type === 'FILE' && entries[i].entry.endsWith('.json')) {
                 var o = document.createElement('option');
-                o.value = EXAMPLES_DIR + entries[i].name;
-                o.textContent = entries[i].name.replace('.json', '');
+                o.value = EXAMPLES_DIR + entries[i].entry;
+                o.textContent = entries[i].entry.replace('.json', '');
                 sel.appendChild(o); found = true;
             }
         }
